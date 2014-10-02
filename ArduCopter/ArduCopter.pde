@@ -164,6 +164,8 @@
 #include "config.h"
 #include "config_channels.h"
 
+#include "prototypes.hpp"
+
 // key aircraft parameters passed to multiple libraries
 static AP_Vehicle::MultiCopter aparm;
 
@@ -267,6 +269,8 @@ static AP_Baro_HIL barometer;
 static AP_Baro_MS5611 barometer(&AP_Baro_MS5611::i2c);
 #elif CONFIG_BARO == HAL_BARO_MS5611_SPI
 static AP_Baro_MS5611 barometer(&AP_Baro_MS5611::spi);
+#elif CONFIG_BARO == HAL_BARO_XPCC
+static AP_Baro_XPCC barometer;
 #else
  #error Unrecognized CONFIG_BARO setting
 #endif
@@ -280,6 +284,8 @@ static AP_Compass_VRBRAIN compass;
 static AP_Compass_HMC5843 compass;
 #elif CONFIG_COMPASS == HAL_COMPASS_HIL
 static AP_Compass_HIL compass;
+#elif CONFIG_COMPASS == HAL_COMPASS_XPCC
+static AP_Compass_XPCC compass;
 #else
  #error Unrecognized CONFIG_COMPASS setting
 #endif
@@ -304,6 +310,8 @@ AP_InertialSensor_Flymaple ins;
 AP_InertialSensor_L3G4200D ins;
 #elif CONFIG_INS_TYPE == HAL_INS_MPU9250
 AP_InertialSensor_MPU9250 ins;
+#elif CONFIG_INS_TYPE == HAL_INS_XPCC
+AP_InertialSensor_XPCC ins;
 #else
   #error Unrecognised CONFIG_INS_TYPE setting.
 #endif // CONFIG_INS_TYPE
@@ -820,7 +828,7 @@ static const AP_Scheduler::Task scheduler_tasks[] PROGMEM = {
     { ten_hz_logging_loop,  40,     30 },
     { fifty_hz_logging_loop, 8,     22 },
     { perf_update,        4000,     20 },
-    { read_receiver_rssi,   40,      5 },
+   // { read_receiver_rssi,   40,      5 },
 #if FRSKY_TELEM_ENABLED == ENABLED
     { telemetry_send,       80,     10 },	
 #endif
@@ -888,7 +896,7 @@ static const AP_Scheduler::Task scheduler_tasks[] PROGMEM = {
     { ten_hz_logging_loop,  10,     300 },
     { fifty_hz_logging_loop, 2,     220 },
     { perf_update,        1000,     200 },
-    { read_receiver_rssi,   10,      50 },
+    //{ read_receiver_rssi,   10,      50 },
 #if FRSKY_TELEM_ENABLED == ENABLED
     { telemetry_send,       20,     100 },	
 #endif
