@@ -18,6 +18,7 @@
 #define HAL_BOARD_FLYMAPLE 6
 #define HAL_BOARD_LINUX    7
 #define HAL_BOARD_VRBRAIN  8
+#define HAL_BOARD_XPCC     9
 #define HAL_BOARD_EMPTY    99
 
 // default board subtype is -1
@@ -53,6 +54,7 @@
 #define HAL_INS_VRBRAIN  7
 #define HAL_INS_MPU9250  8
 #define HAL_INS_L3GD20   9   
+#define HAL_INS_XPCC     10  
 
 // barometer driver types
 #define HAL_BARO_BMP085     1
@@ -61,12 +63,14 @@
 #define HAL_BARO_PX4        4
 #define HAL_BARO_HIL        5
 #define HAL_BARO_VRBRAIN    6
+#define HAL_BARO_XPCC       7
 
 // compass driver types
 #define HAL_COMPASS_HMC5843   1
 #define HAL_COMPASS_PX4       2
 #define HAL_COMPASS_HIL       3
 #define HAL_COMPASS_VRBRAIN   4
+#define HAL_COMPASS_XPCC      5
 
 /**
    CPU classes, used to select if CPU intensive algorithms should be used
@@ -225,6 +229,19 @@
 #define HAL_SERIAL0_BAUD_DEFAULT 115200
 #define CONFIG_HAL_BOARD_SUBTYPE HAL_BOARD_SUBTYPE_NONE
 
+#elif CONFIG_HAL_BOARD == HAL_BOARD_XPCC
+#define AP_HAL_BOARD_DRIVER AP_HAL_XPCC
+#define HAL_BOARD_NAME "XPCC"
+#define HAL_CPU_CLASS HAL_CPU_CLASS_75
+#define HAL_OS_POSIX_IO 0
+#define HAL_STORAGE_SIZE            7168
+#define HAL_STORAGE_SIZE_AVAILABLE  HAL_STORAGE_SIZE
+#define HAL_INS_DEFAULT HAL_INS_XPCC
+#define HAL_BARO_DEFAULT HAL_BARO_XPCC
+#define HAL_COMPASS_DEFAULT HAL_COMPASS_XPCC
+#define HAL_SERIAL0_BAUD_DEFAULT 115200
+#define CONFIG_HAL_BOARD_SUBTYPE HAL_BOARD_SUBTYPE_NONE
+#else
 #else
 #error "Unknown CONFIG_HAL_BOARD type"
 #endif
