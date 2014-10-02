@@ -118,7 +118,9 @@
 								<option id="gnu.cpp.compiler.option.preprocessor.def.1033948092" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="CONFIG_HAL_BOARD=HAL_BOARD_XPCC"/>
 								</option>
-								<option id="gnu.cpp.compiler.option.optimization.flags.838778520" name="Other optimization flags" superClass="gnu.cpp.compiler.option.optimization.flags" useByScannerDiscovery="false" value="-fsingle-precision-constant" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.optimization.flags.838778520" name="Other optimization flags" superClass="gnu.cpp.compiler.option.optimization.flags" useByScannerDiscovery="false" value="-fsingle-precision-constant -fno-math-errno" valueType="string"/>
+								<option id="gnu.cpp.compiler.option.dialect.std.1944394660" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.cpp.compiler.dialect.default" valueType="enumerated"/>
+								<option id="gnu.cpp.compiler.option.dialect.flags.563302888" name="Other dialect flags" superClass="gnu.cpp.compiler.option.dialect.flags" useByScannerDiscovery="true" value="-std=gnu++11" valueType="string"/>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1497285438" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
 							</tool>
 							<tool id="cdt.managedbuild.tool.gnu.cross.c.linker.1778257430" name="Cross GCC Linker" superClass="cdt.managedbuild.tool.gnu.cross.c.linker"/>

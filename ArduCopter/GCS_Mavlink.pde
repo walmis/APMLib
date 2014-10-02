@@ -310,9 +310,10 @@ static void NOINLINE send_simstate(mavlink_channel_t chan)
 
 static void NOINLINE send_hwstatus(mavlink_channel_t chan)
 {
-    mavlink_msg_hwstatus_send(
+    return;//FIXME
+	mavlink_msg_hwstatus_send(
         chan,
-        hal.analogin->board_voltage()*1000,
+        (uint16_t)hal.analogin->board_voltage()*1000,
         hal.i2c->lockup_count());
 }
 
