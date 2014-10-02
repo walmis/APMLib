@@ -242,7 +242,6 @@
 #define HAL_SERIAL0_BAUD_DEFAULT 115200
 #define CONFIG_HAL_BOARD_SUBTYPE HAL_BOARD_SUBTYPE_NONE
 #else
-#else
 #error "Unknown CONFIG_HAL_BOARD type"
 #endif
 

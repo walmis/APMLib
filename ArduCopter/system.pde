@@ -170,7 +170,10 @@ static void init_ardupilot()
 #if MAVLINK_COMM_NUM_BUFFERS > 2
     if (g.serial2_protocol == SERIAL2_FRSKY_DPORT || 
         g.serial2_protocol == SERIAL2_FRSKY_SPORT) {
+#if FRSKY_TELEM_ENABLED == ENABLED
         frsky_telemetry.init(hal.uartD, g.serial2_protocol);
+#endif
+
     } else {
         gcs[2].setup_uart(hal.uartD, map_baudrate(g.serial2_baud), 128, 128);
     }

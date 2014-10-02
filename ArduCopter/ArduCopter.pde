@@ -164,7 +164,7 @@
 #include "config.h"
 #include "config_channels.h"
 
-#include "prototypes.hpp"
+#include "compat/prototypes.hpp"
 
 // key aircraft parameters passed to multiple libraries
 static AP_Vehicle::MultiCopter aparm;
