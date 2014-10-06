@@ -106,7 +106,7 @@ public:
     // is the AHRS subsystem healthy?
     bool healthy(void);
 
-private:
+protected:
     float _ki;
     float _ki_yaw;
 

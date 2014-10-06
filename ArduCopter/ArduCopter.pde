@@ -311,7 +311,7 @@ AP_InertialSensor_L3G4200D ins;
 #elif CONFIG_INS_TYPE == HAL_INS_MPU9250
 AP_InertialSensor_MPU9250 ins;
 #elif CONFIG_INS_TYPE == HAL_INS_XPCC
-AP_InertialSensor_XPCC ins;
+AP_InertialSensor_MPU9150 ins;
 #else
   #error Unrecognised CONFIG_INS_TYPE setting.
 #endif // CONFIG_INS_TYPE
