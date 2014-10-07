@@ -10,7 +10,6 @@
 class AP_Compass_FXOS8700 : public Compass
 {
 private:
-    float               calibration[3];
     bool                _initialised;
     virtual bool        read_raw(void);
     uint8_t             _base_config;

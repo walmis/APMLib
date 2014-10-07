@@ -260,20 +260,11 @@ AP_Compass_FXOS8700::init()
         hal.scheduler->panic(PSTR("Failed to get FXOS8700 semaphore"));
     }
 
-    calibration[0] = 0;
-    calibration[1] = 0;
-    calibration[2] = 0;
-
     //sw reset
     write_register(FXOS8700_CTRL_REG2, 0b01000000);
-    hal.scheduler->delay(1);
-
-    //write_register(FXOS8700_M_CTRL_REG2, 0b00011001);
-
+    hal.scheduler->delay(2);
     //set active and 50hz output rate
     write_register(FXOS8700_CTRL_REG1, 0b00100001);
-
-    //write_register(FXOS8700_CTRL_REG3, 0b10000000);
 
 	//OSR = 7
 	//one shot degauss
@@ -315,9 +306,9 @@ bool AP_Compass_FXOS8700::read()
 	   }
 	}
 
-	_field[0].x = _mag_x_accum / _accum_count;
-	_field[0].y = _mag_y_accum / _accum_count;
-	_field[0].z = _mag_z_accum / _accum_count;
+	_field[0].x = _mag_x_accum / _accum_count * 0.5f;
+	_field[0].y = _mag_y_accum / _accum_count * 0.5f;
+	_field[0].z = _mag_z_accum / _accum_count * 0.5f;
 	_accum_count = 0;
 	_mag_x_accum = _mag_y_accum = _mag_z_accum = 0;
 
