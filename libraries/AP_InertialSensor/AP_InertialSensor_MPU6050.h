@@ -38,10 +38,10 @@ protected:
 
 private:
     AP_HAL::DigitalSource *_drdy_pin;
+    int16_t reset_fifo(uint8_t sensors);
+    bool configure_fifo(uint8_t sensors);
 
     bool                 _sample_available();
-    void                 _read_data_transaction();
-    bool                 _data_ready();
     void                 _poll_data(void);
     uint8_t              _register_read( uint8_t reg );
     void                 _register_write( uint8_t reg, uint8_t val );
@@ -54,17 +54,18 @@ private:
     uint16_t					_num_samples;
     static const float          _gyro_scale;
 
-    uint32_t _last_sample_time_micros;
+    uint32_t _last_sample_timestamp;
 
     // ensure we can't initialise twice
     bool                        _initialised;
     int16_t              _mpu6000_product_id;
 
-    // how many hardware samples before we report a sample to the caller
-    uint8_t _sample_shift;
-
     // support for updating filter at runtime
     uint8_t _last_filter_hz;
+
+    //one sample period
+    uint16_t _sample_time_usec;
+
 
     void _set_filter_register(uint8_t filter_hz, uint8_t default_filter);
 

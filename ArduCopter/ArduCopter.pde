@@ -270,7 +270,7 @@ static AP_Baro_MS5611 barometer(&AP_Baro_MS5611::i2c);
 #elif CONFIG_BARO == HAL_BARO_MS5611_SPI
 static AP_Baro_MS5611 barometer(&AP_Baro_MS5611::spi);
 #elif CONFIG_BARO == HAL_BARO_XPCC
-static AP_Baro_XPCC barometer;
+static AP_Baro_MS5611 barometer(&AP_Baro_MS5611::i2c);
 #else
  #error Unrecognized CONFIG_BARO setting
 #endif
@@ -285,7 +285,7 @@ static AP_Compass_HMC5843 compass;
 #elif CONFIG_COMPASS == HAL_COMPASS_HIL
 static AP_Compass_HIL compass;
 #elif CONFIG_COMPASS == HAL_COMPASS_XPCC
-static AP_Compass_XPCC compass;
+static AP_Compass_FXOS8700 compass;
 #else
  #error Unrecognized CONFIG_COMPASS setting
 #endif
@@ -819,8 +819,8 @@ static const AP_Scheduler::Task scheduler_tasks[] PROGMEM = {
     { crash_check,          40,      2 },
     { gcs_check_input,	     8,    550 },
     { gcs_send_heartbeat,  400,    150 },
-    { gcs_send_deferred,     8,    720 },
-    { gcs_data_stream_send,  8,    950 },
+    { gcs_send_deferred,     4,    720 },
+    { gcs_data_stream_send,  4,    950 },
 #if COPTER_LEDS == ENABLED
     { update_copter_leds,   40,      5 },
 #endif

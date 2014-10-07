@@ -9,6 +9,19 @@
 #include "AP_HAL_Boards.h"
 #include "AP_HAL_Macros.h"
 
+extern void dbgset();
+extern void dbgclr();
+
+class DBGTimer {
+public:
+	DBGTimer() {
+		dbgset();
+	}
+	~DBGTimer() {
+		dbgclr();
+	}
+};
+
 /* HAL Module Classes (all pure virtual) */
 #include "UARTDriver.h"
 #include "I2CDriver.h"

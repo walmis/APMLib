@@ -2,6 +2,7 @@
 
 #include <AP_HAL.h>
 #include "AP_InertialSensor_MPU6050.h"
+#include <stdio.h>
 
 extern const AP_HAL::HAL& hal;
 
@@ -16,6 +17,13 @@ extern const AP_HAL::HAL& hal;
 #define MPU6000_DRDY_PIN BBB_P8_14
 #endif
 #endif
+
+#define INV_X_GYRO      (0x40)
+#define INV_Y_GYRO      (0x20)
+#define INV_Z_GYRO      (0x10)
+#define INV_XYZ_GYRO    (INV_X_GYRO | INV_Y_GYRO | INV_Z_GYRO)
+#define INV_XYZ_ACCEL   (0x08)
+#define INV_XYZ_COMPASS (0x01)
 
 // MPU 6000 registers
 #define MPUREG_XG_OFFS_TC                               0x00
@@ -64,6 +72,7 @@ extern const AP_HAL::HAL& hal;
 #define MPUREG_INT_PIN_CFG                              0x37
 #       define BIT_INT_RD_CLEAR                                 0x10    // clear the interrupt when any read occurs
 #       define BIT_LATCH_INT_EN                                 0x20    // latch data ready pin 
+#       define BIT_I2C_BYPASS_EN                                 0x02    // latch data ready pin
 #define MPUREG_INT_ENABLE                               0x38
 // bit definitions for MPUREG_INT_ENABLE
 #       define BIT_RAW_RDY_EN                                   0x01
@@ -158,6 +167,9 @@ extern const AP_HAL::HAL& hal;
 #define MPU6000_REV_D8                          0x58    // 0101			1000
 #define MPU6000_REV_D9                          0x59    // 0101			1001
 
+#define BIT_FIFO_OVERFLOW   (0x10)
+#define BIT_FIFO_RST        (0x04)
+#define BIT_FIFO_EN         (0x40)
 
 /*
  *  RM-MPU-6000A-00.pdf, page 33, section 4.25 lists LSB sensitivity of
@@ -179,10 +191,9 @@ AP_InertialSensor_MPU6050::AP_InertialSensor_MPU6050() :
     _i2c(NULL),
     _i2c_sem(NULL),
     _num_samples(0),
-    _last_sample_time_micros(0),
+    _last_sample_timestamp(0),
     _initialised(false),
     _mpu6000_product_id(AP_PRODUCT_ID_NONE),
-    _sample_shift(0),
     _last_filter_hz(0),
     _error_count(0),
     _addr(0x68)
@@ -205,26 +216,19 @@ uint16_t AP_InertialSensor_MPU6050::_init_sensor( Sample_rate sample_rate )
     hal.scheduler->suspend_timer_procs();
 
     uint8_t tries = 0;
-    do {
-        bool success = _hardware_init(sample_rate);
-        if (success) {
-            hal.scheduler->delay(5+2);
-            if (!_i2c_sem->take(100)) {
-                hal.scheduler->panic(PSTR("MPU6000: Unable to get semaphore"));
-            }
-            if (_data_ready()) {
-                _i2c_sem->give();
-                break;
-            } else {
-                hal.console->println_P(
-                        PSTR("MPU6000 startup failed: no data ready"));
-            }
-            _i2c_sem->give();
-        }
-        if (tries++ > 5) {
-            hal.scheduler->panic(PSTR("PANIC: failed to boot MPU6000 5 times")); 
-        }
-    } while (1);
+
+	bool success = _hardware_init(sample_rate);
+	if (success) {
+		hal.scheduler->delay(5+2);
+		if (!_i2c_sem->take(100)) {
+			hal.scheduler->panic(PSTR("MPU6000: Unable to get semaphore"));
+		}
+		_i2c_sem->give();
+	}
+	if (tries++ > 5) {
+		hal.scheduler->panic(PSTR("PANIC: failed to boot MPU6000 5 times"));
+	}
+
 
     hal.scheduler->resume_timer_procs();
     
@@ -232,12 +236,12 @@ uint16_t AP_InertialSensor_MPU6050::_init_sensor( Sample_rate sample_rate )
     /* read the first lot of data.
      * _read_data_transaction requires the spi semaphore to be taken by
      * its caller. */
-    _last_sample_time_micros = hal.scheduler->micros();
-    hal.scheduler->delay(10);
-    if (_i2c_sem->take(100)) {
-        _read_data_transaction();
-        _i2c_sem->give();
-    }
+//    _last_sample_time_micros = hal.scheduler->micros();
+//    hal.scheduler->delay(10);
+//    if (_i2c_sem->take(100)) {
+//        _read_data_transaction();
+//        _i2c_sem->give();
+//    }
 
     // start the timer process to read samples
     hal.scheduler->register_timer_process(AP_HAL_MEMBERPROC(&AP_InertialSensor_MPU6050::_poll_data));
@@ -252,16 +256,31 @@ uint16_t AP_InertialSensor_MPU6050::_init_sensor( Sample_rate sample_rate )
 
 bool AP_InertialSensor_MPU6050::wait_for_sample(uint16_t timeout_ms)
 {
-    if (_sample_available()) {
+    DBGTimer t;
+	if (_sample_available()) {
         return true;
     }
-    uint32_t start = hal.scheduler->millis();
-    while ((hal.scheduler->millis() - start) < timeout_ms) {
-        hal.scheduler->delay_microseconds(100);
-        if (_sample_available()) {
-            return true;
-        }
-    }
+
+	uint32_t start = hal.scheduler->millis();
+	while(hal.scheduler->millis() - start < timeout_ms) {
+		if(_sample_available()) {
+			return true;
+		}
+	}
+
+//    uint32_t start = hal.scheduler->millis();
+//    while ((hal.scheduler->millis() - start) < timeout_ms) {
+//        uint32_t tnow = hal.scheduler->micros();
+//        // we spin for the last timing_lag microseconds. Before that
+//        // we yield the CPU to allow IO to happen
+//        const uint16_t timing_lag = 400;
+//        if (_last_sample_timestamp + _sample_time_usec > tnow+timing_lag) {
+//            hal.scheduler->delay_microseconds(_last_sample_timestamp + _sample_time_usec - (tnow+timing_lag));
+//        }
+//        if (_sample_available()) {
+//            return true;
+//        }
+//    }
     return false;
 }
 
@@ -310,91 +329,83 @@ bool AP_InertialSensor_MPU6050::update( void )
 
 /*================ HARDWARE FUNCTIONS ==================== */
 
-/**
- * Return true if the MPU6000 has new data available for reading.
- *
- * We use the data ready pin if it is available.  Otherwise, read the
- * status register.
- */
-bool AP_InertialSensor_MPU6050::_data_ready()
-{
-    if (_drdy_pin) {
-        return _drdy_pin->read() != 0;
-    }
-    uint8_t status = _register_read(MPUREG_INT_STATUS);
-    return (status & BIT_RAW_RDY_INT) != 0;
-}
 
 /**
  * Timer process to poll for new data from the MPU6000.
  */
 void AP_InertialSensor_MPU6050::_poll_data(void)
 {
-    if (hal.scheduler->in_timerprocess()) {
+    static uint32_t last = hal.scheduler->micros();
+
+    if(hal.scheduler->micros() - last < _sample_time_usec-200) {
+    	return;
+    } else {
+    	last = hal.scheduler->micros();
+    }
+
+	if (hal.scheduler->in_timerprocess()) {
         if (!_i2c_sem->take_nonblocking()) {
-            /*
-              the semaphore being busy is an expected condition when the
-              mainline code is calling wait_for_sample() which will
-              grab the semaphore. We return now and rely on the mainline
-              code grabbing the latest sample.
-            */
             return;
         }   
-        if (_data_ready()) {
-            _last_sample_time_micros = hal.scheduler->micros();
-            _read_data_transaction(); 
-        }
-        _i2c_sem->give();
-    } else {
-        /* Synchronous read - take semaphore */
-        if (_i2c_sem->take(10)) {
-            if (_data_ready()) {
-                _last_sample_time_micros = hal.scheduler->micros();
-                _read_data_transaction(); 
-            }
+//        if (_data_ready()) {
+//
+//            _read_data_transaction();
+//        }
+
+        // Read accelerometer FIFO to find out how many samples are available
+        /* Assumes maximum packet size is gyro (6) + accel (6). */
+        uint8_t data[12];
+        uint8_t packet_size = 12;
+        uint16_t fifo_count, index = 0;
+
+        // fifo_count_h register contains the number of samples in the FIFO
+        hal.i2c->readRegisters(_addr, MPUREG_FIFO_COUNTH, 2, data);
+        fifo_count = (data[0] << 8) | data[1];
+        if (fifo_count < packet_size){
+            // give back i2c semaphore
             _i2c_sem->give();
-        } else {
-            hal.scheduler->panic(
-                PSTR("PANIC: AP_InertialSensor_MPU6050::_poll_data "
-                     "failed to take SPI semaphore synchronously"));
+            return;
         }
+
+
+        if (fifo_count > (1024 >> 1)) {
+        	printf("FIFO ovf: %d\n", fifo_count);
+            /* FIFO is 50% full, better check overflow bit. */
+            hal.i2c->readRegister(_addr, MPUREG_INT_STATUS, data);
+            if (data[0] & BIT_FIFO_OVERFLOW) {
+                reset_fifo(INV_XYZ_ACCEL| INV_XYZ_GYRO);
+                _i2c_sem->give();
+                return;
+            }
+        }
+
+        // read the samples
+        for (uint16_t i=0; i< fifo_count / packet_size; i++) {
+            // read the data
+            _i2c->readRegisters(_addr, MPUREG_FIFO_R_W, packet_size, data);
+
+            _accel_sum.y += (int16_t) (data[index+0] << 8) | data[index+1];
+            _accel_sum.x += (int16_t) (data[index+2] << 8) | data[index+3];
+            _accel_sum.z -= (int16_t) (data[index+4] << 8) | data[index+5];
+
+            _gyro_sum.y  += (int16_t) (data[6] << 8) | data[7];
+            _gyro_sum.x  += (int16_t) (data[8] << 8) | data[9];
+            _gyro_sum.z  -= (int16_t) (data[10] << 8) | data[11];
+
+			_sum_count++;
+			if (_sum_count == 0) {
+				// rollover - v unlikely
+				_accel_sum.zero();
+				_gyro_sum.zero();
+			}
+        }
+
+        _last_sample_timestamp = hal.scheduler->micros();
+
+        _i2c_sem->give();
     }
 }
-#include <stdio.h>
-void AP_InertialSensor_MPU6050::_read_data_transaction() {
-    /* one resister address followed by seven 2-byte registers */
 
-	uint16_t vals[7];
-
-	_i2c->readRegisters(_addr, MPUREG_ACCEL_XOUT_H, 14, (uint8_t*)vals);
-
-	_accel_sum.x += (int16_t)__builtin_bswap16(vals[1]);
-	_accel_sum.y += (int16_t)__builtin_bswap16(vals[0]);
-	_accel_sum.z -= (int16_t)__builtin_bswap16(vals[2]);
-	_gyro_sum.x  += (int16_t)__builtin_bswap16(vals[5]);
-	_gyro_sum.y  += (int16_t)__builtin_bswap16(vals[4]);
-	_gyro_sum.z  -= (int16_t)__builtin_bswap16(vals[6]);
-	_sum_count++;
-	if (_sum_count == 0) {
-		// rollover - v unlikely
-		_accel_sum.zero();
-		_gyro_sum.zero();
-	}
-//#define int16_val(v, idx) ((int16_t)(((uint16_t)v[2*idx] << 8) | v[2*idx+1]))
-//    _accel_sum.x += int16_val(rx.v, 1);
-//    _accel_sum.y += int16_val(rx.v, 0);
-//    _accel_sum.z -= int16_val(rx.v, 2);
-//    _gyro_sum.x  += int16_val(rx.v, 5);
-//    _gyro_sum.y  += int16_val(rx.v, 4);
-//    _gyro_sum.z  -= int16_val(rx.v, 6);
-//    _sum_count++;
-//
-//    if (_sum_count == 0) {
-//        // rollover - v unlikely
-//        _accel_sum.zero();
-//        _gyro_sum.zero();
-//    }
-}
 
 uint8_t AP_InertialSensor_MPU6050::_register_read( uint8_t reg )
 {
@@ -406,6 +417,17 @@ uint8_t AP_InertialSensor_MPU6050::_register_read( uint8_t reg )
 void AP_InertialSensor_MPU6050::_register_write(uint8_t reg, uint8_t val)
 {
     _i2c->writeRegister(_addr, reg, val);
+}
+
+int16_t AP_InertialSensor_MPU6050::reset_fifo(uint8_t sensors)
+{
+    uint8_t data;
+
+    _i2c->writeRegister(_addr, MPUREG_USER_CTRL, 0);
+    _i2c->writeRegister(_addr, MPUREG_USER_CTRL, BIT_FIFO_RST);
+    _i2c->writeRegister(_addr, MPUREG_USER_CTRL, BIT_FIFO_EN);
+
+    return 0;
 }
 
 /*
@@ -493,34 +515,34 @@ bool AP_InertialSensor_MPU6050::_hardware_init(Sample_rate sample_rate)
 
     uint8_t default_filter;
 
-    // sample rate and filtering
-    // to minimise the effects of aliasing we choose a filter
-    // that is less than half of the sample rate
+
     switch (sample_rate) {
     case RATE_50HZ:
-        // this is used for plane and rover, where noise resistance is
-        // more important than update rate. Tests on an aerobatic plane
-        // show that 10Hz is fine, and makes it very noise resistant
-        default_filter = BITS_DLPF_CFG_10HZ;
-        _sample_shift = 2;
+    	default_filter = BITS_DLPF_CFG_10HZ;
+    	_register_write(MPUREG_SMPLRT_DIV, MPUREG_SMPLRT_50HZ);
+        _sample_time_usec = 20000;
         break;
     case RATE_100HZ:
-        default_filter = BITS_DLPF_CFG_20HZ;
-        _sample_shift = 1;
+    	default_filter = BITS_DLPF_CFG_42HZ;
+    	_register_write(MPUREG_SMPLRT_DIV, MPUREG_SMPLRT_100HZ);
+        _sample_time_usec = 10000;
         break;
     case RATE_200HZ:
+    	default_filter = BITS_DLPF_CFG_42HZ;
+        _sample_time_usec = 5000;
+        _register_write(MPUREG_SMPLRT_DIV, MPUREG_SMPLRT_200HZ);
+        break;
+    case RATE_400HZ:
     default:
-        default_filter = BITS_DLPF_CFG_20HZ;
-        _sample_shift = 0;
+    	default_filter = BITS_DLPF_CFG_42HZ;
+    	_register_write(MPUREG_SMPLRT_DIV, MPUREG_SMPLRT_500HZ);
+        _sample_time_usec = 2500;
         break;
     }
 
+    hal.scheduler->delay(1);
     _set_filter_register(_mpu6000_filter, default_filter);
 
-    // set sample rate to 200Hz, and use _sample_divider to give
-    // the requested rate to the application
-    _register_write(MPUREG_SMPLRT_DIV, MPUREG_SMPLRT_200HZ);
-    hal.scheduler->delay(1);
 
     _register_write(MPUREG_GYRO_CONFIG, BITS_GYRO_FS_2000DPS);  // Gyro scale 2000º/s
     hal.scheduler->delay(1);
@@ -544,9 +566,11 @@ bool AP_InertialSensor_MPU6050::_hardware_init(Sample_rate sample_rate)
     _register_write(MPUREG_INT_ENABLE, BIT_RAW_RDY_EN);
     hal.scheduler->delay(1);
 
+    configure_fifo(INV_XYZ_ACCEL | INV_XYZ_GYRO);
+
     // clear interrupt on any read, and hold the data ready pin high
     // until we clear the interrupt
-    _register_write(MPUREG_INT_PIN_CFG, BIT_INT_RD_CLEAR | BIT_LATCH_INT_EN);
+    _register_write(MPUREG_INT_PIN_CFG, BIT_INT_RD_CLEAR | BIT_LATCH_INT_EN | BIT_I2C_BYPASS_EN);
 
     _i2c_sem->give();
 
@@ -564,10 +588,27 @@ float AP_InertialSensor_MPU6050::get_gyro_drift_rate(void)
 // return true if a sample is available
 bool AP_InertialSensor_MPU6050::_sample_available()
 {
-    _poll_data();
-    return (_sum_count >> _sample_shift) > 0;
+    return (_sum_count) > 0;
 }
 
+bool AP_InertialSensor_MPU6050::configure_fifo(uint8_t sensors)
+{
+    int16_t result = 0;
+
+    /* Compass data isn't going into the FIFO. Stop trying. */
+    sensors &= ~INV_XYZ_COMPASS;
+
+    // Enable or disable the interrupts
+    // set_int_enable(1);
+
+    if (sensors) {
+        _i2c->writeRegister(_addr, MPUREG_FIFO_EN, sensors);
+    	if (reset_fifo(sensors)) {
+            return -1;
+        }
+    }
+    return 1;
+}
 
 #if MPU6000_DEBUG
 // dump all config registers - used for debug
@@ -592,6 +633,5 @@ void AP_InertialSensor_MPU6050::_dump_registers(void)
 // get_delta_time returns the time period in seconds overwhich the sensor data was collected
 float AP_InertialSensor_MPU6050::get_delta_time() const
 {
-    // the sensor runs at 200Hz
-    return 0.005 * _num_samples;
+    return _sample_time_usec * 1.0e-6f * _num_samples;
 }

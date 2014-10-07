@@ -158,7 +158,7 @@ void AP_Baro_MS5611_SPI::sem_give()
 // I2C Device //////////////////////////////////////////////////////////////////
 #if MS5611_WITH_I2C
 
-#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NAVIO
+#if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NAVIO || CONFIG_HAL_BOARD == HAL_BOARD_XPCC
 #define MS5611_ADDR 0x77
 #else
 #define MS5611_ADDR 0x76 /** I2C address of the MS5611 on the PX4 board. */
