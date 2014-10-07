@@ -193,6 +193,11 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
         gcs[chan-MAVLINK_COMM_0].send_gps_raw(gps);
         break;
 
+    case MSG_RADIO_IN:
+        CHECK_PAYLOAD_SIZE(RC_CHANNELS_RAW);
+        gcs[chan-MAVLINK_COMM_0].send_radio_in(0);
+        break;
+
     case MSG_RADIO_OUT:
         CHECK_PAYLOAD_SIZE(SERVO_OUTPUT_RAW);
         send_radio_out(chan);
@@ -249,7 +254,6 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
     case MSG_RETRY_DEFERRED:
     case MSG_CURRENT_WAYPOINT:
     case MSG_VFR_HUD:
-    case MSG_RADIO_IN:
     case MSG_SYSTEM_TIME:
     case MSG_LIMITS_STATUS:
     case MSG_FENCE_STATUS:
@@ -418,6 +422,7 @@ GCS_MAVLINK::data_stream_send(void)
     }
 
     if (stream_trigger(STREAM_RC_CHANNELS)) {
+        send_message(MSG_RADIO_IN);
         send_message(MSG_RADIO_OUT);
     }
 
@@ -810,10 +815,13 @@ mission_failed:
         mavlink_manual_control_t packet;
         mavlink_msg_manual_control_decode(msg, &packet);
 
-        if (g.proxy_mode == true && proxy_vehicle.initialised) {
-            // Also proxy it to the remote
-            if (comm_get_txspace(proxy_vehicle.chan) > ((uint16_t)msg->len) + MAVLINK_NUM_NON_PAYLOAD_BYTES) 
-                _mavlink_resend_uart(proxy_vehicle.chan, msg);
+        // if the packet is not for us, send onto the vehicle
+        if (mavlink_check_target(packet.target,0)) {
+            if (g.proxy_mode == true && proxy_vehicle.initialised) {
+                if (comm_get_txspace(proxy_vehicle.chan) > ((uint16_t)msg->len) + MAVLINK_NUM_NON_PAYLOAD_BYTES)
+                    _mavlink_resend_uart(proxy_vehicle.chan, msg);
+            }
+            break;
         }
         if(msg->sysid != g.sysid_my_gcs) break;                         // Only accept control from our gcs
         tracking_manual_control(packet);
