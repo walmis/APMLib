@@ -66,6 +66,7 @@ private:
     //one sample period
     uint16_t _sample_time_usec;
 
+    volatile bool _sem_missed;
 
     void _set_filter_register(uint8_t filter_hz, uint8_t default_filter);
 

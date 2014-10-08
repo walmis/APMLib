@@ -225,11 +225,6 @@ void AP_Compass_FXOS8700::accumulate(void)
    //printf("read %d %d %d\n", _mag_x, _mag_y, _mag_z);
 
    if (result) {
-	  // the _mag_N values are in the range -2048 to 2047, so we can
-	  // accumulate up to 15 of them in an int16_t. Let's make it 14
-	  // for ease of calculation. We expect to do reads at 10Hz, and
-	  // we get new data at most 75Hz, so we don't expect to
-	  // accumulate more than 8 before a read
 	  _mag_x_accum += _mag_x;
 	  _mag_y_accum += _mag_y;
 	  _mag_z_accum += _mag_z;
@@ -306,9 +301,9 @@ bool AP_Compass_FXOS8700::read()
 	   }
 	}
 
-	_field[0].x = _mag_x_accum / _accum_count * 0.5f;
-	_field[0].y = _mag_y_accum / _accum_count * 0.5f;
-	_field[0].z = _mag_z_accum / _accum_count * 0.5f;
+	_field[0].x = _mag_x_accum / _accum_count;
+	_field[0].y = _mag_y_accum / _accum_count;
+	_field[0].z = _mag_z_accum / _accum_count;
 	_accum_count = 0;
 	_mag_x_accum = _mag_y_accum = _mag_z_accum = 0;
 
