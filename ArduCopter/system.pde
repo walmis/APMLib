@@ -73,6 +73,7 @@ static void run_cli(AP_HAL::UARTDriver *port)
 
 static void init_ardupilot()
 {
+#if CONFIG_HAL_BOARD != HAL_BOARD_XPCC
     if (!hal.gpio->usb_connected()) {
         // USB is not connected, this means UART0 may be a Xbee, with
         // its darned bricking problem. We can't write to it for at
@@ -81,7 +82,7 @@ static void init_ardupilot()
         // added later
         delay(1000);
     }
-
+#endif
     // Console serial port
     //
     // The console port buffers are defined to be sufficiently large to support

@@ -202,7 +202,7 @@ AP_InertialSensor_MPU6050::AP_InertialSensor_MPU6050() :
 
 uint16_t AP_InertialSensor_MPU6050::_init_sensor( Sample_rate sample_rate )
 {
-    if (_initialised) return _mpu6000_product_id;
+	if (_initialised) return _mpu6000_product_id;
     _initialised = true;
 
     _i2c = hal.i2c;
@@ -229,19 +229,7 @@ uint16_t AP_InertialSensor_MPU6050::_init_sensor( Sample_rate sample_rate )
 		hal.scheduler->panic(PSTR("PANIC: failed to boot MPU6000 5 times"));
 	}
 
-
     hal.scheduler->resume_timer_procs();
-    
-
-    /* read the first lot of data.
-     * _read_data_transaction requires the spi semaphore to be taken by
-     * its caller. */
-//    _last_sample_time_micros = hal.scheduler->micros();
-//    hal.scheduler->delay(10);
-//    if (_i2c_sem->take(100)) {
-//        _read_data_transaction();
-//        _i2c_sem->give();
-//    }
 
     // start the timer process to read samples
     hal.scheduler->register_timer_process(AP_HAL_MEMBERPROC(&AP_InertialSensor_MPU6050::_poll_data));

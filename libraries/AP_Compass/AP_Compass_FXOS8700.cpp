@@ -163,7 +163,7 @@ extern const AP_HAL::HAL& hal;
 // read_register - read a register value
 bool AP_Compass_FXOS8700::read_register(uint8_t address, uint8_t *value)
 {
-    if (hal.i2c->readRegister((uint8_t)COMPASS_ADDRESS, address, value) != 0) {
+    if (hal.i2c->readRegister(COMPASS_ADDRESS, address, value) != 0) {
         _healthy[0] = false;
         return false;
     }
@@ -173,7 +173,7 @@ bool AP_Compass_FXOS8700::read_register(uint8_t address, uint8_t *value)
 // write_register - update a register value
 bool AP_Compass_FXOS8700::write_register(uint8_t address, uint8_t value)
 {
-    if (hal.i2c->writeRegister((uint8_t)COMPASS_ADDRESS, address, value) != 0) {
+    if (hal.i2c->writeRegister(COMPASS_ADDRESS, address, value) != 0) {
         _healthy[0] = false;
         return false;
     }
@@ -186,11 +186,21 @@ bool AP_Compass_FXOS8700::read_raw()
 	int16_t rx, ry, rz;
 	uint8_t buffer[6];
 
-	hal.i2c->readRegisters(COMPASS_ADDRESS, FXOS8700_M_OUT_X_MSB, 6, buffer);
+	if(hal.i2c->readRegisters(COMPASS_ADDRESS, FXOS8700_M_OUT_X_MSB, 6, buffer) != 0) {
+		_healthy[0] = false;
+		return false;
+	}
 
 	rx = (((int16_t)buffer[0]) << 8) | buffer[1];
     ry = (((int16_t)buffer[2]) << 8) | buffer[3];
     rz = (((int16_t)buffer[4]) << 8) | buffer[5];
+
+    if(rx == 0 && ry == 0 && rz == 0) {
+    	_healthy[0] = false;
+    	return false;
+    } else {
+    	_healthy[0] = true;
+    }
 
     _mag_x = -rx;
     _mag_y = -ry;
@@ -222,8 +232,6 @@ void AP_Compass_FXOS8700::accumulate(void)
    bool result = read_raw();
    _i2c_sem->give();
 
-   //printf("read %d %d %d\n", _mag_x, _mag_y, _mag_z);
-
    if (result) {
 	  _mag_x_accum += _mag_x;
 	  _mag_y_accum += _mag_y;
@@ -243,37 +251,48 @@ void AP_Compass_FXOS8700::accumulate(void)
 bool
 AP_Compass_FXOS8700::init()
 {
-    int numAttempts = 0, good_count = 0;
-    bool success = false;
-
-    float gain_multiple = 1.0;
-
-    hal.scheduler->delay(10);
+	hal.scheduler->delay(10);
 
     _i2c_sem = hal.i2c->get_semaphore();
     if (!_i2c_sem->take(HAL_SEMAPHORE_BLOCK_FOREVER)) {
         hal.scheduler->panic(PSTR("Failed to get FXOS8700 semaphore"));
     }
 
+    _initialised = false;
+
+
+#if CONFIG_HAL_BOARD == HAL_BOARD_XPCC
+    //write MPU6050 register to enable i2c passthrough
+    hal.i2c->writeRegister(0x68, 0x6A, 0x00);
+    hal.i2c->writeRegister(0x68, 0x6B, 0x00);
+    hal.i2c->writeRegister(0x68, 0x37, 0x02);
+#endif
     //sw reset
     write_register(FXOS8700_CTRL_REG2, 0b01000000);
-    hal.scheduler->delay(2);
+    hal.scheduler->delay(5);
+
+    _healthy[0] = true;
     //set active and 50hz output rate
     write_register(FXOS8700_CTRL_REG1, 0b00100001);
-
 	//OSR = 7
 	//one shot degauss
     write_register(FXOS8700_M_CTRL_REG1, 0b01000001 | (7<<2));
 
+    if(_healthy) {
+    	uint8_t c = 100;
+    	while(!read_raw() && c) {
+    		hal.scheduler->delay(1);
+    		c--;
+    	}
+    }
+
     _i2c_sem->give();
-    _initialised = true;
 
-	// perform an initial read
-	_healthy[0] = true;
-	read();
+    if(_healthy[0]) {
+    	_initialised = true;
+    }
 
-
-    return true;
+    return _healthy[0];
 }
 
 // Read Sensor data
