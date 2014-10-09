@@ -101,7 +101,7 @@ public:
         k_param_gps_hdop_good,
         k_param_battery,
         k_param_fs_batt_mah,
-        k_param_angle_rate_max,         // remove
+        k_param_radio,
         k_param_rssi_range,
         k_param_rc_feel_rp,
         k_param_NavEKF,                 // Extended Kalman Filter Inertial Navigation Group

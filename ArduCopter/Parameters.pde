@@ -1112,6 +1112,8 @@ const AP_Param::Info var_info[] PROGMEM = {
     GOBJECT(terrain,                "TERRAIN_", AP_Terrain),
 #endif
 
+    GOBJECT(radio,                  "RADIO_",  Radio),
+
     AP_VAREND
 };
 

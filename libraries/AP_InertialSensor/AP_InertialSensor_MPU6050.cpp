@@ -360,17 +360,16 @@ void AP_InertialSensor_MPU6050::_poll_data(void)
 		return;
 	}
 
-
 	if (fifo_count > (1024 >> 1)) {
 		/* FIFO is 50% full, better check overflow bit. */
 		hal.i2c->readRegister(_addr, MPUREG_INT_STATUS, data);
 		if (data[0] & BIT_FIFO_OVERFLOW) {
 			reset_fifo(INV_XYZ_ACCEL| INV_XYZ_GYRO);
+
 			_i2c_sem->give();
 			return;
 		}
 	}
-
 	// read the samples
 	for (uint16_t i=0; i< fifo_count / packet_size; i++) {
 		// read the data
@@ -414,10 +413,13 @@ void AP_InertialSensor_MPU6050::_register_write(uint8_t reg, uint8_t val)
 int16_t AP_InertialSensor_MPU6050::reset_fifo(uint8_t sensors)
 {
     uint8_t data;
-
     _i2c->writeRegister(_addr, MPUREG_USER_CTRL, 0);
     _i2c->writeRegister(_addr, MPUREG_USER_CTRL, BIT_FIFO_RST);
     _i2c->writeRegister(_addr, MPUREG_USER_CTRL, BIT_FIFO_EN);
+
+	_sum_count = 0;
+	_accel_sum.zero();
+	_gyro_sum.zero();
 
     return 0;
 }
@@ -555,7 +557,7 @@ bool AP_InertialSensor_MPU6050::_hardware_init(Sample_rate sample_rate)
     hal.scheduler->delay(1);
 
     // configure interrupt to fire when new data arrives
-    _register_write(MPUREG_INT_ENABLE, BIT_RAW_RDY_EN);
+    _register_write(MPUREG_INT_ENABLE, BIT_RAW_RDY_EN | BIT_FIFO_OFLOW_EN);
     hal.scheduler->delay(1);
 
     // clear interrupt on any read, and hold the data ready pin high

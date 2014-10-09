@@ -141,10 +141,10 @@
  static bool verify_yaw() ;
  static void do_take_picture() ;
  static uint8_t mavlink_compassmot(mavlink_channel_t chan) ;
-  static void delay(uint32_t ms) ;
+//  static void delay(uint32_t ms) ;
   static void mavlink_delay(uint32_t ms) ;
-  static uint32_t millis() ;
-  static uint32_t micros() ;
+//  static uint32_t millis() ;
+//  static uint32_t micros() ;
  static bool acro_init(bool ignore_checks) ;
  static void acro_run() ;
  static void get_pilot_desired_angle_rates(int16_t roll_in, int16_t pitch_in, int16_t yaw_in, float &roll_out, float &pitch_out, float &yaw_out) ;
