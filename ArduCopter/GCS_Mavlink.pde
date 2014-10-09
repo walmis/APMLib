@@ -206,7 +206,7 @@ static NOINLINE void send_extended_status1(mavlink_channel_t chan)
     if (ap.rc_receiver_present && !failsafe.radio) {
         control_sensors_health |= MAV_SYS_STATUS_SENSOR_RC_RECEIVER;
     }
-    if (!ins.get_gyro_health_all()) {
+    if (!ins.get_gyro_health_all() || !ins.gyro_calibrated_ok_all()) {
         control_sensors_health &= ~MAV_SYS_STATUS_SENSOR_3D_GYRO;
     }
     if (!ins.get_accel_health_all()) {
@@ -1100,10 +1100,9 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
             break;
 
         case MAV_CMD_PREFLIGHT_CALIBRATION:
-            if (packet.param1 == 1 ||
-                packet.param2 == 1) {
-                ins.init_accel();
-                ahrs.set_trim(Vector3f(0,0,0));             // clear out saved trim
+            if (packet.param1 == 1) {
+                // gyro offset calibration
+                ins.init_gyro();
                 result = MAV_RESULT_ACCEPTED;
             }
             if (packet.param3 == 1) {
