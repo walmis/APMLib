@@ -14,6 +14,7 @@
  static void barometer_accumulate(void) ;
   static void perf_update(void) ;
   void loop() ;
+  static void set_throttle_zero_flag(int16_t throttle_control);
  static void fast_loop() ;
  static void rc_loop() ;
  static void throttle_loop() ;
