@@ -14,6 +14,7 @@
  static void barometer_accumulate(void) ;
   static void perf_update(void) ;
   void loop() ;
+  static void init_disarm_motors();
   static void set_throttle_zero_flag(int16_t throttle_control);
  static void fast_loop() ;
  static void rc_loop() ;
@@ -300,7 +301,7 @@
  static void pre_arm_checks(bool display_failure) ;
  static void pre_arm_rc_checks() ;
  static bool pre_arm_gps_checks(bool display_failure) ;
- static bool arm_checks(bool display_failure) ;
+ static bool arm_checks(bool display_failure, bool arming_from_gcs);
  static void init_disarm_motors() ;
  static void set_servos_4() ;
  static void run_nav_updates(void) ;
