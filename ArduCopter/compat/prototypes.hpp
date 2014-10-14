@@ -366,6 +366,8 @@
   static void check_usb_mux(void) ;
  static void telemetry_send(void) ;
   static void print_hit_enter() ;
-
-
+  static void guided_limit_clear();
+  static void guided_limit_init_time_and_pos();
+  static bool guided_limit_check();
+  static void guided_limit_set(uint32_t timeout_ms, float alt_min_cm, float alt_max_cm, float horiz_max_cm);
 #endif /* ARDUCOPTER_HPP_ */
