@@ -369,7 +369,6 @@ void AP_InertialSensor_MPU6050::_poll_data(void)
 	if(fifo_count % packet_size != 0) {
 
 		if(prevInvalid) {
-			hal.console->printf("reset fifo\n");
 			reset_fifo(INV_XYZ_ACCEL| INV_XYZ_GYRO);
 			prevInvalid = false;
 			_i2c_sem->give();
