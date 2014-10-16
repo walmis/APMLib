@@ -250,8 +250,9 @@ bool AP_InertialSensor_MPU6050::wait_for_sample(uint16_t timeout_ms)
         return true;
     }
 
-	uint32_t start = hal.scheduler->millis();
-	while(hal.scheduler->millis() - start < timeout_ms) {
+	uint32_t time = (hal.scheduler->micros() - _last_sample_timestamp);
+	while(true) {
+		hal.scheduler->yield();
 		if(_sem_missed) {
 			_poll_data();
 			_sem_missed = false;
@@ -260,6 +261,7 @@ bool AP_InertialSensor_MPU6050::wait_for_sample(uint16_t timeout_ms)
 		if(_sample_available()) {
 			return true;
 		}
+
 	}
 
 //    uint32_t start = hal.scheduler->millis();
@@ -354,10 +356,28 @@ void AP_InertialSensor_MPU6050::_poll_data(void)
 	// fifo_count_h register contains the number of samples in the FIFO
 	hal.i2c->readRegisters(_addr, MPUREG_FIFO_COUNTH, 2, data);
 	fifo_count = (data[0] << 8) | data[1];
+
 	if (fifo_count < packet_size){
+		if(fifo_count) _sem_missed = true; //we started receiving samples, so notify the main thread to poll for data
 		// give back i2c semaphore
 		_i2c_sem->give();
 		return;
+	}
+
+	//FIFO protection
+	static bool prevInvalid = false;
+	if(fifo_count % packet_size != 0) {
+
+		if(prevInvalid) {
+			hal.console->printf("reset fifo\n");
+			reset_fifo(INV_XYZ_ACCEL| INV_XYZ_GYRO);
+			prevInvalid = false;
+			_i2c_sem->give();
+			return;
+		}
+		prevInvalid = true;
+	} else {
+		prevInvalid = false;
 	}
 
 	if (fifo_count > (1024 >> 1)) {
@@ -370,10 +390,13 @@ void AP_InertialSensor_MPU6050::_poll_data(void)
 			return;
 		}
 	}
+
 	// read the samples
-	for (uint16_t i=0; i< fifo_count / packet_size; i++) {
+	uint8_t nreads = (fifo_count / packet_size);
+	for (uint16_t i=0; i < nreads; i++) {
 		// read the data
 		_i2c->readRegisters(_addr, MPUREG_FIFO_R_W, packet_size, data);
+		fifo_count -= packet_size;
 
 		_accel_sum.y += (int16_t) (data[index+0] << 8) | data[index+1];
 		_accel_sum.x += (int16_t) (data[index+2] << 8) | data[index+3];

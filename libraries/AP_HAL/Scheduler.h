@@ -54,6 +54,8 @@ public:
        optional function to stop clock at a given time, used by log replay
      */
     virtual void     stop_clock(uint64_t time_usec) {}
+
+    virtual void yield() {};
 };
 
 #endif // __AP_HAL_SCHEDULER_H__
