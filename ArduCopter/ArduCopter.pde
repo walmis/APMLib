@@ -231,7 +231,7 @@ static DataFlash_Empty DataFlash;
 ////////////////////////////////////////////////////////////////////////////////
 // the rate we run the main loop at
 ////////////////////////////////////////////////////////////////////////////////
-#if MAIN_LOOP_RATE == 400
+#if MAIN_LOOP_RATE >= 400
 static const AP_InertialSensor::Sample_rate ins_sample_rate = AP_InertialSensor::RATE_400HZ;
 #else
 static const AP_InertialSensor::Sample_rate ins_sample_rate = AP_InertialSensor::RATE_100HZ;
@@ -770,7 +770,7 @@ static void pre_arm_checks(bool display_failure);
 // setup the var_info table
 AP_Param param_loader(var_info);
 
-#if MAIN_LOOP_RATE == 400
+#if MAIN_LOOP_RATE >= 400
 /*
   scheduler table for fast CPUs - all regular tasks apart from the fast_loop()
   should be listed here, along with how often they should be called
@@ -787,59 +787,60 @@ AP_Param param_loader(var_info);
   4000 = 0.1hz
   
  */
+#define HZ(f) (uint16_t)(MAIN_LOOP_RATE/f)
 static const AP_Scheduler::Task scheduler_tasks[] PROGMEM = {
-    { rc_loop,               4,     10 },
-    { throttle_loop,         8,     45 },
-    { update_GPS,            8,     90 },
-    { update_batt_compass,  40,     72 },
-    { read_aux_switches,    40,      5 },
-    { arm_motors_check,     40,      1 },
-    { auto_trim,            40,     14 },
-    { update_altitude,      40,    100 },
-    { run_nav_updates,      40,     80 },
-    { update_thr_cruise,    40,     10 },
-    { three_hz_loop,       133,      9 },
-    { compass_accumulate,    8,     42 },
-    { barometer_accumulate,  8,     25 },
+    { rc_loop,               HZ(100),     10 },
+    { throttle_loop,         HZ(50),     45 },
+    { update_GPS,            HZ(50),     90 },
+    { update_batt_compass,   HZ(10),     72 },
+    { read_aux_switches,     HZ(10),      5 },
+    { arm_motors_check,      HZ(10),      1 },
+    { auto_trim,             HZ(10),     14 },
+    { update_altitude,       HZ(10),    100 },
+    { run_nav_updates,       HZ(10),     80 },
+    { update_thr_cruise,     HZ(10),     10 },
+    { three_hz_loop,         HZ(3),      9 },
+    { compass_accumulate,    HZ(50),     42 },
+    { barometer_accumulate,  HZ(50),     25 },
 #if FRAME_CONFIG == HELI_FRAME
-    { check_dynamic_flight,  8,     10 },
+    { check_dynamic_flight,  HZ(50),     10 },
 #endif
-    { update_notify,         8,     10 },
-    { one_hz_loop,         400,     42 },
-    { ekf_check,            40,      2 },
-    { crash_check,          40,      2 },
-    { gcs_check_input,	     8,    550 },
-    { gcs_send_heartbeat,  400,    150 },
-    { gcs_send_deferred,     8,    720 },
-    { gcs_data_stream_send,  8,    950 },
+    { update_notify,         HZ(50),     10 },
+    { one_hz_loop,           HZ(1),      42 },
+    { ekf_check,             HZ(10),      2 },
+    { crash_check,           HZ(10),      2 },
+    { gcs_check_input,	     HZ(50),    550 },
+    { gcs_send_heartbeat,    HZ(1),    150 },
+    { gcs_send_deferred,     HZ(50),    720 },
+    { gcs_data_stream_send,  HZ(50),    950 },
 #if COPTER_LEDS == ENABLED
-    { update_copter_leds,   40,      5 },
+    { update_copter_leds,    HZ(10),      5 },
 #endif
-    { update_mount,          8,     45 },
-    { ten_hz_logging_loop,  40,     30 },
-    { fifty_hz_logging_loop, 8,     22 },
-    { perf_update,        4000,     20 },
+    { update_mount,          HZ(50),     45 },
+    { ten_hz_logging_loop,   HZ(10),     30 },
+    { fifty_hz_logging_loop, HZ(50),     22 },
+    { perf_update,           HZ(0.1),     20 },
    // { read_receiver_rssi,   40,      5 },
 #if FRSKY_TELEM_ENABLED == ENABLED
     { telemetry_send,       80,     10 },	
 #endif
 #if EPM_ENABLED == ENABLED
-    { epm_update,           40,     10 },
+    { epm_update,           HZ(10),     10 },
 #endif
 #ifdef USERHOOK_FASTLOOP
-    { userhook_FastLoop,     4,     10 },
+    { userhook_FastLoop,     HZ(100),     10 },
 #endif
 #ifdef USERHOOK_50HZLOOP
-    { userhook_50Hz,         8,     10 },
+    { userhook_50Hz,         HZ(50),     10 },
 #endif
 #ifdef USERHOOK_MEDIUMLOOP
-    { userhook_MediumLoop,  40,     10 },
+    { userhook_MediumLoop,   HZ(10),     10 },
 #endif
 #ifdef USERHOOK_SLOWLOOP
-    { userhook_SlowLoop,    120,    10 },
+    { userhook_SlowLoop,     HZ(3),    10 },
 #endif
 #ifdef USERHOOK_SUPERSLOWLOOP
-    { userhook_SuperSlowLoop,400,   10 },
+    { userhook_SuperSlowLoop,HZ(1),   10 },
 #endif
 };
 #else

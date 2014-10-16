@@ -5,7 +5,7 @@
 //  we measure the main loop time
 //
 
-#if MAIN_LOOP_RATE == 400
+#if MAIN_LOOP_RATE >= 400
  # define PERF_INFO_OVERTIME_THRESHOLD_MICROS 3000
 #else
  # define PERF_INFO_OVERTIME_THRESHOLD_MICROS 10500
