@@ -346,9 +346,12 @@
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
-//  EKF Checker
+//  EKF & DCM Checker
 #ifndef EKFCHECK_THRESHOLD_DEFAULT
  # define EKFCHECK_THRESHOLD_DEFAULT    0.8f    // EKF checker's default compass and velocity variance above which the EKF's horizontal position will be considered bad
+#endif
+#ifndef DCMCHECK_THRESHOLD_DEFAULT
+ # define DCMCHECK_THRESHOLD_DEFAULT    0.8f    // DCM checker's default yaw error threshold above which we will abandon horizontal position hold.  The units are sin(angle) so 0.8 = about 60degrees of error
 #endif
 
 //////////////////////////////////////////////////////////////////////////////
@@ -386,8 +389,12 @@
 
 //////////////////////////////////////////////////////////////////////////////
 //  OPTICAL_FLOW
-#ifndef OPTFLOW                         // sets global enabled/disabled flag for optflow (as seen in CLI)
- # define OPTFLOW                       DISABLED
+#ifndef OPTFLOW
+ #if CONFIG_HAL_BOARD == HAL_BOARD_PX4
+  # define OPTFLOW       ENABLED
+ #else
+  # define OPTFLOW       DISABLED
+ #endif
 #endif
 // optical flow based loiter PI values
 #ifndef OPTFLOW_ROLL_P
