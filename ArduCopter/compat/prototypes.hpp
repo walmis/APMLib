@@ -250,7 +250,7 @@
  void parachute_check() ;
  static void parachute_release() ;
  static void parachute_manual_release() ;
- void ekf_check() ;
+ void ekf_dcm_check() ;
  static void failsafe_ekf_event() ;
  static void failsafe_ekf_off_event(void) ;
  static void esc_calibration_startup_check()
@@ -370,4 +370,7 @@
   static void guided_limit_init_time_and_pos();
   static bool guided_limit_check();
   static void guided_limit_set(uint32_t timeout_ms, float alt_min_cm, float alt_max_cm, float horiz_max_cm);
+  static bool should_log(uint32_t mask);
+  static bool ekf_over_threshold();
+  static bool dcm_over_threshold();
 #endif /* ARDUCOPTER_HPP_ */
