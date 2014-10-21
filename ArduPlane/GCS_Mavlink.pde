@@ -1109,6 +1109,16 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
             }
             break;
 
+        case MAV_CMD_DO_LAND_START:
+            result = MAV_RESULT_FAILED;
+
+            // attempt to switch to next DO_LAND_START command in the mission
+            if (mission.jump_to_landing_sequence()) {
+                set_mode(AUTO);
+                result = MAV_RESULT_ACCEPTED;
+            }
+            break;
+
         case MAV_CMD_DO_FENCE_ENABLE:
             result = MAV_RESULT_ACCEPTED;
             

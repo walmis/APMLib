@@ -702,23 +702,6 @@ void NavEKF::SelectVelPosFusion()
             fusePosData = false;
         }
 
-        // check for and read new height data
-        readHgtData();
-
-        // command fusion of height data
-        if (newDataHgt)
-        {
-            // reset data arrived flag
-            newDataHgt = false;
-            // reset state updates and counter used to spread fusion updates across several frames to reduce 10Hz pulsing
-            memset(&hgtIncrStateDelta[0], 0, sizeof(hgtIncrStateDelta));
-            hgtUpdateCount = 0;
-            // enable fusion
-            fuseHgtData = true;
-        } else {
-            fuseHgtData = false;
-        }
-
     } else {
         // in static mode use synthetic position measurements set to zero
         // only fuse synthetic measurements when rate of change of velocity is less than 0.5g to reduce attitude errors due to launch acceleration
@@ -729,7 +712,23 @@ void NavEKF::SelectVelPosFusion()
             fusePosData = false;
         }
         fuseVelData = false;
+    }
+
+    // check for and read new height data
+    readHgtData();
+
+    // command fusion of height data
+    if (newDataHgt)
+    {
+        // reset data arrived flag
+        newDataHgt = false;
+        // reset state updates and counter used to spread fusion updates across several frames to reduce 10Hz pulsing
+        memset(&hgtIncrStateDelta[0], 0, sizeof(hgtIncrStateDelta));
+        hgtUpdateCount = 0;
+        // enable fusion
         fuseHgtData = true;
+    } else {
+        fuseHgtData = false;
     }
 
     // perform fusion
@@ -2786,7 +2785,7 @@ void NavEKF::quat2Tbn(Matrix3f &Tbn, const Quaternion &quat) const
 // return the Euler roll, pitch and yaw angle in radians
 void NavEKF::getEulerAngles(Vector3f &euler) const
 {
-    state.quat.to_euler(&euler.x, &euler.y, &euler.z);
+    state.quat.to_euler(euler.x, euler.y, euler.z);
     euler = euler - _ahrs->get_trim();
 }
 
@@ -3251,7 +3250,7 @@ void NavEKF::alignYawGPS()
         float newYaw;
         float yawErr;
         // get quaternion from existing filter states and calculate roll, pitch and yaw angles
-        state.quat.to_euler(&roll, &pitch, &oldYaw);
+        state.quat.to_euler(roll, pitch, oldYaw);
         // calculate yaw angle from GPS velocity
         newYaw = atan2f(velNED[1],velNED[0]);
         // modify yaw angle using GPS ground course if more than 45 degrees away or if not previously aligned
