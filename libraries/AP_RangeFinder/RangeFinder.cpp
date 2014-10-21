@@ -19,6 +19,7 @@
 #include "AP_RangeFinder_PulsedLightLRF.h"
 #include "AP_RangeFinder_MaxsonarI2CXL.h"
 #include "AP_RangeFinder_PX4.h"
+#include "AP_RangeFinder_HC04.h"
 
 // table of user settable parameters
 const AP_Param::GroupInfo RangeFinder::var_info[] PROGMEM = {
@@ -225,6 +226,13 @@ void RangeFinder::detect_instance(uint8_t instance)
         if (AP_RangeFinder_MaxsonarI2CXL::detect(*this, instance)) {
             state[instance].instance = instance;
             drivers[instance] = new AP_RangeFinder_MaxsonarI2CXL(*this, instance, state[instance]);
+            return;
+        }
+    }
+    if (type == RangeFinder_TYPE_HC04) {
+        if (AP_RangeFinder_HC04::detect(*this, instance)) {
+            state[instance].instance = instance;
+            drivers[instance] = new AP_RangeFinder_HC04(*this, instance, state[instance]);
             return;
         }
     }
