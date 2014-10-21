@@ -373,4 +373,6 @@
   static bool should_log(uint32_t mask);
   static bool ekf_over_threshold();
   static bool dcm_over_threshold();
+  void auto_loiter_run();
+  bool auto_loiter_start();
 #endif /* ARDUCOPTER_HPP_ */
