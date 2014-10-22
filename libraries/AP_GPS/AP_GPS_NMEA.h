@@ -69,6 +69,7 @@ private:
         _GPS_SENTENCE_GPRMC = 32,
         _GPS_SENTENCE_GPGGA = 64,
         _GPS_SENTENCE_GPVTG = 96,
+        _GPS_SENTENCE_GPGSA = 128,
         _GPS_SENTENCE_OTHER = 0
     };
 
@@ -135,6 +136,8 @@ private:
     int32_t _new_course;                                        ///< course parsed from a term
     uint16_t _new_hdop;                                                 ///< HDOP parsed from a term
     uint8_t _new_satellite_count;                       ///< satellite count parsed from a term
+    AP_GPS::GPS_Status _new_fix_status;
+    bool _new_dgps;
 
     /// @name	Init strings
     ///			In ::init, an attempt is made to configure the GPS
@@ -150,6 +153,7 @@ private:
     //@{
     static const prog_char _gprmc_string[];
     static const prog_char _gpgga_string[];
+    static const prog_char _gpgsa_string[];
     static const prog_char _gpvtg_string[];
     //@}
 

@@ -64,10 +64,14 @@ extern const AP_HAL::HAL& hal;
 // MediaTek-based GPS.
 //
 #define MTK_INIT_MSG \
-    "$PMTK314,0,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0*28\r\n" /* GGA & VTG once every fix */ \
+    "$PMTK314,0,0,1,1,5,0,0,0,0,0,0,0,0,0,0,0,0*2D\r\n" /* GGA, GSA & VTG once every fix */ \
     "$PMTK330,0*2E\r\n"                                 /* datum = WGS84 */ \
     "$PMTK313,1*2E\r\n"                                 /* SBAS on */ \
-    "$PMTK301,2*2E\r\n"                                 /* use SBAS data for DGPS */
+    "$PMTK301,2*2E\r\n"                                /* use SBAS data for DGPS */ \
+	"$PMTK220, 200*2C\r\n" /* nmea update rate 5hz */ \
+	"$PMTK300,200,0,0,0,0*2F\r\n" /* fix update rate 5hz */\
+	"$PMTK397,0*23" \
+	"$PMTK251,57600*2C\r\n"
 
 // ublox init messages /////////////////////////////////////////////////////////
 //
@@ -90,6 +94,7 @@ const prog_char AP_GPS_NMEA::_initialisation_blob[] PROGMEM = SIRF_INIT_MSG MTK_
 const char AP_GPS_NMEA::_gprmc_string[] PROGMEM = "GPRMC";
 const char AP_GPS_NMEA::_gpgga_string[] PROGMEM = "GPGGA";
 const char AP_GPS_NMEA::_gpvtg_string[] PROGMEM = "GPVTG";
+const char AP_GPS_NMEA::_gpgsa_string[] PROGMEM = "GPGSA";
 
 // Convenience macros //////////////////////////////////////////////////////////
 //
@@ -124,7 +129,7 @@ bool AP_GPS_NMEA::read(void)
 bool AP_GPS_NMEA::_decode(char c)
 {
     bool valid_sentence = false;
-
+    hal.console->print(c);
     switch (c) {
     case ',': // term terminators
         _parity ^= c;
@@ -239,6 +244,8 @@ bool AP_GPS_NMEA::_term_complete()
     if (_is_checksum_term) {
         uint8_t checksum = 16 * _from_hex(_term[0]) + _from_hex(_term[1]);
         if (checksum == _parity) {
+        	state.num_sats      = _new_satellite_count;
+
             if (_gps_data_good) {
                 switch (_sentence_type) {
                 case _GPS_SENTENCE_GPRMC:
@@ -250,23 +257,27 @@ bool AP_GPS_NMEA::_term_complete()
                     state.ground_course_cd = _new_course;
                     make_gps_time(_new_date, _new_time * 10);
                     state.last_gps_time_ms = hal.scheduler->millis();
-                    // To-Do: add support for proper reporting of 2D and 3D fix
-                    state.status           = AP_GPS::GPS_OK_FIX_3D;
+                    state.status           = _new_fix_status;
                     fill_3d_velocity();
                     break;
                 case _GPS_SENTENCE_GPGGA:
+                    make_gps_time(_new_date, _new_time * 10);
+                    state.last_gps_time_ms = hal.scheduler->millis();
                     state.location.alt  = _new_altitude;
                     state.location.lat  = _new_latitude;
                     state.location.lng  = _new_longitude;
-                    state.num_sats      = _new_satellite_count;
                     state.hdop          = _new_hdop;
-                    // To-Do: add support for proper reporting of 2D and 3D fix
-                    state.status        = AP_GPS::GPS_OK_FIX_3D;
+                    state.status        = _new_fix_status;
                     break;
                 case _GPS_SENTENCE_GPVTG:
                     state.ground_speed     = _new_speed*0.01f;
                     state.ground_course_cd = _new_course;
+                    fill_3d_velocity();
                     // VTG has no fix indicator, can't change fix status
+                    break;
+                case _GPS_SENTENCE_GPGSA:
+                	state.status        = _new_fix_status;
+                	state.hdop 			= _new_hdop;
                     break;
                 }
             } else {
@@ -291,6 +302,9 @@ bool AP_GPS_NMEA::_term_complete()
             _sentence_type = _GPS_SENTENCE_GPRMC;
         } else if (!strcmp_P(_term, _gpgga_string)) {
             _sentence_type = _GPS_SENTENCE_GPGGA;
+        } else if (!strcmp_P(_term, _gpgsa_string)) {
+            _sentence_type = _GPS_SENTENCE_GPGSA;
+            _gps_data_good = true;
         } else if (!strcmp_P(_term, _gpvtg_string)) {
             _sentence_type = _GPS_SENTENCE_GPVTG;
             // VTG may not contain a data qualifier, presume the solution is good
@@ -310,15 +324,14 @@ bool AP_GPS_NMEA::_term_complete()
         case _GPS_SENTENCE_GPRMC + 2: // validity (RMC)
             _gps_data_good = _term[0] == 'A';
             break;
-        case _GPS_SENTENCE_GPGGA + 6: // Fix data (GGA)
-            _gps_data_good = _term[0] > '0';
-            break;
         case _GPS_SENTENCE_GPVTG + 9: // validity (VTG) (we may not see this field)
             _gps_data_good = _term[0] != 'N';
             break;
         case _GPS_SENTENCE_GPGGA + 7: // satellite count (GGA)
             _new_satellite_count = atol(_term);
             break;
+
+        case _GPS_SENTENCE_GPGSA + 16: //HDOP (GSA)
         case _GPS_SENTENCE_GPGGA + 8: // HDOP (GGA)
             _new_hdop = _parse_decimal_100();
             break;
@@ -367,6 +380,36 @@ bool AP_GPS_NMEA::_term_complete()
         case _GPS_SENTENCE_GPVTG + 1: // Course (VTG)
             _new_course = _parse_decimal_100();
             break;
+
+        case _GPS_SENTENCE_GPGGA + 6: // Fix data (GGA)
+            _gps_data_good = _term[0] > '0';
+            if(_term[0] == '2') {
+            	_new_dgps = true;
+            } else {
+            	_new_dgps = false;
+            }
+
+            break;
+        case _GPS_SENTENCE_GPGSA+2:{ //fix mode
+        	uint8_t status = atol(_term);
+        	switch(status) {
+				case 1:
+					_new_fix_status = AP_GPS::NO_FIX;
+					break;
+				case 2:
+					_new_fix_status = AP_GPS::GPS_OK_FIX_2D;
+					break;
+				case 3:
+					if(_new_dgps) {
+						_new_fix_status = AP_GPS::GPS_OK_FIX_3D_DGPS;
+					} else {
+						_new_fix_status = AP_GPS::GPS_OK_FIX_3D;
+					}
+
+					break;
+				}
+        	}
+        	break;
         }
     }
 
