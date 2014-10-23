@@ -64,11 +64,11 @@ extern const AP_HAL::HAL& hal;
 // MediaTek-based GPS.
 //
 #define MTK_INIT_MSG \
-    "$PMTK314,0,0,1,1,5,0,0,0,0,0,0,0,0,0,0,0,0*2D\r\n" /* GGA, GSA & VTG once every fix */ \
+    "$PMTK314,0,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n" /* GGA, GSA & VTG once every fix */ \
     "$PMTK330,0*2E\r\n"                                 /* datum = WGS84 */ \
     "$PMTK313,1*2E\r\n"                                 /* SBAS on */ \
     "$PMTK301,2*2E\r\n"                                /* use SBAS data for DGPS */ \
-	"$PMTK220, 200*2C\r\n" /* nmea update rate 5hz */ \
+	"$PMTK220,100*2F\r\n" /* nmea update rate 5hz */ \
 	"$PMTK300,200,0,0,0,0*2F\r\n" /* fix update rate 5hz */\
 	"$PMTK397,0*23" \
 	"$PMTK251,57600*2C\r\n"
@@ -109,7 +109,19 @@ AP_GPS_NMEA::AP_GPS_NMEA(AP_GPS &_gps, AP_GPS::GPS_State &_state, AP_HAL::UARTDr
     _term_offset(0),
     _gps_data_good(false)
 {
-    gps.send_blob_start(state.instance, _initialisation_blob, sizeof(_initialisation_blob));
+    _new_altitude = 0;
+    _new_course = 0;
+    _new_date = 0;
+    _new_dgps = false;
+    _new_fix_status = AP_GPS::NO_FIX;
+    _new_hdop = 65535;
+    _new_latitude = 0;
+    _new_longitude = 0;
+    _new_satellite_count = 0;
+    _new_speed = 0;
+    _new_time = 0;
+
+	gps.send_blob_start(state.instance, _initialisation_blob, sizeof(_initialisation_blob));
 }
 
 bool AP_GPS_NMEA::read(void)
@@ -261,7 +273,6 @@ bool AP_GPS_NMEA::_term_complete()
                     fill_3d_velocity();
                     break;
                 case _GPS_SENTENCE_GPGGA:
-                    make_gps_time(_new_date, _new_time * 10);
                     state.last_gps_time_ms = hal.scheduler->millis();
                     state.location.alt  = _new_altitude;
                     state.location.lat  = _new_latitude;
