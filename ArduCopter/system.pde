@@ -253,6 +253,9 @@ static void init_ardupilot()
         gcs_send_text_P(SEVERITY_LOW, PSTR("Waiting for first HIL_STATE message"));
         delay(1000);
     }
+
+    // set INS to HIL mode
+    ins.set_hil_mode();
 #endif
 
     // read Baro pressure at ground
@@ -318,6 +321,11 @@ static void startup_ground(bool force_gyro_cal)
  #if CLI_ENABLED == ENABLED
     report_ins();
  #endif
+
+    // reset ahrs gyro bias
+    if (force_gyro_cal) {
+        ahrs.reset_gyro_drift();
+    }
 
     // setup fast AHRS gains to get right attitude
     ahrs.set_fast_gains(true);

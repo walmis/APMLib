@@ -12,30 +12,36 @@
 // enable debug to see a register dump on startup
 #define MPU6050_DEBUG 0
 
-class AP_InertialSensor_MPU6050 : public AP_InertialSensor
+class AP_InertialSensor_MPU6050 : public AP_InertialSensor_Backend
 {
 public:
+	AP_InertialSensor_MPU6050(AP_InertialSensor &imu);
 
-    AP_InertialSensor_MPU6050();
+    static AP_InertialSensor_Backend *detect(AP_InertialSensor &imu);
+
+    bool gyro_sample_available(void) { return _sum_count >= 0; }
+    bool accel_sample_available(void) { return _sum_count >= 0; }
 
     /* Concrete implementation of AP_InertialSensor functions: */
     bool                update();
-    float               get_gyro_drift_rate();
+    //float               get_gyro_drift_rate();
 
     // wait for a sample to be available, with timeout in milliseconds
-    bool                wait_for_sample(uint16_t timeout_ms);
+    //bool                wait_for_sample(uint16_t timeout_ms);
 
     // get_delta_time returns the time period in seconds overwhich the sensor data was collected
-    float            	get_delta_time() const;
+    //float            	get_delta_time() const;
 
-    uint16_t error_count(void) const { return _error_count; }
-    bool healthy(void) const { return _error_count <= 4; }
-    bool get_gyro_health(uint8_t instance) const { return healthy(); }
-    bool get_accel_health(uint8_t instance) const { return healthy(); }
+    //uint16_t error_count(void) const { return _error_count; }
+    //bool healthy(void) const { return _error_count <= 4; }
+    //bool get_gyro_health(uint8_t instance) const { return healthy(); }
+    //bool get_accel_health(uint8_t instance) const { return healthy(); }
 
 protected:
-    uint16_t                    _init_sensor( Sample_rate sample_rate );
+    uint16_t                    _init_sensor();
 
+    uint8_t _gyro_instance;
+    uint8_t _accel_instance;
 private:
     AP_HAL::DigitalSource *_drdy_pin;
     int16_t reset_fifo(uint8_t sensors);
@@ -46,7 +52,7 @@ private:
     uint8_t              _register_read( uint8_t reg );
     void                 _register_write( uint8_t reg, uint8_t val );
     void                 _register_write_check(uint8_t reg, uint8_t val);
-    bool                 _hardware_init(Sample_rate sample_rate);
+    bool                 _hardware_init();
 
     AP_HAL::I2CDriver *_i2c;
     AP_HAL::Semaphore *_i2c_sem;

@@ -185,8 +185,8 @@ const float AP_InertialSensor_MPU6050::_gyro_scale = (0.0174532f / 16.4f);
  *  variants however
  */
 
-AP_InertialSensor_MPU6050::AP_InertialSensor_MPU6050() :
-	AP_InertialSensor(),
+AP_InertialSensor_MPU6050::AP_InertialSensor_MPU6050(AP_InertialSensor &imu) :
+	AP_InertialSensor_Backend(imu),
     _drdy_pin(NULL),
     _i2c(NULL),
     _i2c_sem(NULL),
@@ -200,7 +200,7 @@ AP_InertialSensor_MPU6050::AP_InertialSensor_MPU6050() :
 {
 }
 
-uint16_t AP_InertialSensor_MPU6050::_init_sensor( Sample_rate sample_rate )
+uint16_t AP_InertialSensor_MPU6050::_init_sensor( )
 {
 	if (_initialised) return _mpu6000_product_id;
     _initialised = true;
@@ -217,7 +217,7 @@ uint16_t AP_InertialSensor_MPU6050::_init_sensor( Sample_rate sample_rate )
 
     uint8_t tries = 0;
 
-	bool success = _hardware_init(sample_rate);
+	bool success = _hardware_init();
 	if (success) {
 		hal.scheduler->delay(5+2);
 		if (!_i2c_sem->take(100)) {
@@ -228,6 +228,9 @@ uint16_t AP_InertialSensor_MPU6050::_init_sensor( Sample_rate sample_rate )
 	if (tries++ > 5) {
 		hal.scheduler->panic(PSTR("PANIC: failed to boot MPU6000 5 times"));
 	}
+
+	_gyro_instance = _imu.register_gyro();
+    _accel_instance = _imu.register_accel();
 
     hal.scheduler->resume_timer_procs();
 
@@ -243,78 +246,71 @@ uint16_t AP_InertialSensor_MPU6050::_init_sensor( Sample_rate sample_rate )
 
 /*================ AP_INERTIALSENSOR PUBLIC INTERFACE ==================== */
 
-bool AP_InertialSensor_MPU6050::wait_for_sample(uint16_t timeout_ms)
-{
-    //DBGTimer t;
-	if (_sample_available()) {
-        return true;
-    }
-
-	uint32_t time = (hal.scheduler->micros() - _last_sample_timestamp);
-	while(true) {
-		hal.scheduler->yield();
-		if(_sem_missed) {
-			_poll_data();
-			_sem_missed = false;
-		}
-
-		if(_sample_available()) {
-			return true;
-		}
-
-	}
-
-//    uint32_t start = hal.scheduler->millis();
-//    while ((hal.scheduler->millis() - start) < timeout_ms) {
-//        uint32_t tnow = hal.scheduler->micros();
-//        // we spin for the last timing_lag microseconds. Before that
-//        // we yield the CPU to allow IO to happen
-//        const uint16_t timing_lag = 400;
-//        if (_last_sample_timestamp + _sample_time_usec > tnow+timing_lag) {
-//            hal.scheduler->delay_microseconds(_last_sample_timestamp + _sample_time_usec - (tnow+timing_lag));
-//        }
-//        if (_sample_available()) {
-//            return true;
-//        }
+//bool AP_InertialSensor_MPU6050::wait_for_sample(uint16_t timeout_ms)
+//{
+//    //DBGTimer t;
+//	if (_sample_available()) {
+//        return true;
 //    }
-    return false;
-}
+//
+//	uint32_t time = (hal.scheduler->micros() - _last_sample_timestamp);
+//	while(true) {
+//		hal.scheduler->yield();
+//		if(_sem_missed) {
+//			_poll_data();
+//			_sem_missed = false;
+//		}
+//
+//		if(_sample_available()) {
+//			return true;
+//		}
+//
+//	}
+//
+////    uint32_t start = hal.scheduler->millis();
+////    while ((hal.scheduler->millis() - start) < timeout_ms) {
+////        uint32_t tnow = hal.scheduler->micros();
+////        // we spin for the last timing_lag microseconds. Before that
+////        // we yield the CPU to allow IO to happen
+////        const uint16_t timing_lag = 400;
+////        if (_last_sample_timestamp + _sample_time_usec > tnow+timing_lag) {
+////            hal.scheduler->delay_microseconds(_last_sample_timestamp + _sample_time_usec - (tnow+timing_lag));
+////        }
+////        if (_sample_available()) {
+////            return true;
+////        }
+////    }
+//    return false;
+//}
 
 bool AP_InertialSensor_MPU6050::update( void )
 {
-    // wait for at least 1 sample
-    if (!wait_for_sample(1000)) {
-        return false;
-    }
+	if(_sum_count == 0)
+		return false;
 
-    _previous_accel[0] = _accel[0];
+    Vector3f accel, gyro;
 
     // disable timer procs for mininum time
     hal.scheduler->suspend_timer_procs();
-    _gyro[0]  = Vector3f(_gyro_sum.x, _gyro_sum.y, _gyro_sum.z);
-    _accel[0] = Vector3f(_accel_sum.x, _accel_sum.y, _accel_sum.z);
+
+    gyro(_gyro_sum.x, _gyro_sum.y, _gyro_sum.z);
+    accel(_accel_sum.x, _accel_sum.y, _accel_sum.z);
     _num_samples = _sum_count;
     _accel_sum.zero();
     _gyro_sum.zero();
+
     _sum_count = 0;
     hal.scheduler->resume_timer_procs();
 
-    _gyro[0].rotate(_board_orientation);
-    _gyro[0] *= _gyro_scale / _num_samples;
-    _gyro[0] -= _gyro_offset[0];
+    gyro *= _gyro_scale / _num_samples;
+    _rotate_and_offset_gyro(_gyro_instance, gyro);
 
-    _accel[0].rotate(_board_orientation);
-    _accel[0] *= MPU6000_ACCEL_SCALE_1G / _num_samples;
+    accel *= MPU6000_ACCEL_SCALE_1G / _num_samples;
+    _rotate_and_offset_accel(_accel_instance, accel);
 
-    Vector3f accel_scale = _accel_scale[0].get();
-    _accel[0].x *= accel_scale.x;
-    _accel[0].y *= accel_scale.y;
-    _accel[0].z *= accel_scale.z;
-    _accel[0] -= _accel_offset[0];
-
-    if (_last_filter_hz != _mpu6000_filter) {
+    if (_last_filter_hz != _imu.get_filter()) {
         if (_i2c_sem->take(10)) {
-            _set_filter_register(_mpu6000_filter, 0);
+            _set_filter_register(_imu.get_filter(), 0);
             _error_count = 0;
             _i2c_sem->give();
         }
@@ -494,7 +490,7 @@ void AP_InertialSensor_MPU6050::_set_filter_register(uint8_t filter_hz, uint8_t 
 }
 
 
-bool AP_InertialSensor_MPU6050::_hardware_init(Sample_rate sample_rate)
+bool AP_InertialSensor_MPU6050::_hardware_init()
 {
     if (!_i2c_sem->take(100)) {
         hal.scheduler->panic(PSTR("MPU6000: Unable to get semaphore"));
@@ -532,32 +528,28 @@ bool AP_InertialSensor_MPU6050::_hardware_init(Sample_rate sample_rate)
     uint8_t default_filter;
 
 
-    switch (sample_rate) {
-    case RATE_50HZ:
+    switch (_imu.get_sample_rate()) {
+    case AP_InertialSensor::RATE_50HZ:
     	default_filter = BITS_DLPF_CFG_10HZ;
     	_register_write(MPUREG_SMPLRT_DIV, MPUREG_SMPLRT_50HZ);
-        _sample_time_usec = 20000;
         break;
-    case RATE_100HZ:
+    case AP_InertialSensor::RATE_100HZ:
     	default_filter = BITS_DLPF_CFG_42HZ;
     	_register_write(MPUREG_SMPLRT_DIV, MPUREG_SMPLRT_100HZ);
-        _sample_time_usec = 10000;
         break;
-    case RATE_200HZ:
+    case AP_InertialSensor::RATE_200HZ:
     	default_filter = BITS_DLPF_CFG_42HZ;
-        _sample_time_usec = 5000;
         _register_write(MPUREG_SMPLRT_DIV, MPUREG_SMPLRT_200HZ);
         break;
-    case RATE_400HZ:
+    case AP_InertialSensor::RATE_500HZ:
     default:
     	default_filter = BITS_DLPF_CFG_42HZ;
     	_register_write(MPUREG_SMPLRT_DIV, MPUREG_SMPLRT_500HZ);
-        _sample_time_usec = 2000;
         break;
     }
 
     hal.scheduler->delay(1);
-    _set_filter_register(_mpu6000_filter, default_filter);
+    _set_filter_register(_imu.get_filter(), default_filter);
 
 
     _register_write(MPUREG_GYRO_CONFIG, BITS_GYRO_FS_2000DPS);  // Gyro scale 2000º/s
@@ -596,11 +588,11 @@ bool AP_InertialSensor_MPU6050::_hardware_init(Sample_rate sample_rate)
 
 // return the MPU6k gyro drift rate in radian/s/s
 // note that this is much better than the oilpan gyros
-float AP_InertialSensor_MPU6050::get_gyro_drift_rate(void)
-{
-    // 0.5 degrees/second/minute
-    return ToRad(0.5/60);
-}
+//float AP_InertialSensor_MPU6050::get_gyro_drift_rate(void)
+//{
+//    // 0.5 degrees/second/minute
+//    return ToRad(0.5/60);
+//}
 
 // return true if a sample is available
 bool AP_InertialSensor_MPU6050::_sample_available()
@@ -646,9 +638,16 @@ void AP_InertialSensor_MPU6050::_dump_registers(void)
 }
 #endif
 
-
-// get_delta_time returns the time period in seconds overwhich the sensor data was collected
-float AP_InertialSensor_MPU6050::get_delta_time() const
+AP_InertialSensor_Backend *AP_InertialSensor_MPU6050::detect(AP_InertialSensor &_imu)
 {
-    return _sample_time_usec * 1.0e-6f * _num_samples;
+    AP_InertialSensor_MPU6050 *sensor = new AP_InertialSensor_MPU6050(_imu);
+    if (sensor == NULL) {
+        return NULL;
+    }
+    if (!sensor->_init_sensor()) {
+        delete sensor;
+        return NULL;
+    }
+
+    return sensor;
 }

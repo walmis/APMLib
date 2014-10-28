@@ -328,7 +328,7 @@
   static void trim_radio() ;
  static void init_sonar(void) ;
   static void init_barometer(bool full_calibration) ;
- static int32_t read_barometer(void) ;
+ static void read_barometer(void);
  static int16_t read_sonar(void) ;
   static void init_compass() ;
   static void init_optflow() ;
