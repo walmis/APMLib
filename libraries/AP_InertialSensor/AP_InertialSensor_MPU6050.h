@@ -58,7 +58,12 @@ private:
     AP_HAL::Semaphore *_i2c_sem;
 
     uint16_t					_num_samples;
-    static const float          _gyro_scale;
+
+    /*
+     *  RM-MPU-6000A-00.pdf, page 33, section 4.25 lists LSB sensitivity of
+     *  gyro as 16.4 LSB/DPS at scale factor of +/- 2000dps (FS_SEL==3)
+     */
+    const float          _gyro_scale = (0.0174532f / 16.4f);
 
     uint32_t _last_sample_timestamp;
 

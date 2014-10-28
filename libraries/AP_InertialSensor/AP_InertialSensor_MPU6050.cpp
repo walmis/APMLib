@@ -172,12 +172,6 @@ extern const AP_HAL::HAL& hal;
 #define BIT_FIFO_EN         (0x40)
 
 /*
- *  RM-MPU-6000A-00.pdf, page 33, section 4.25 lists LSB sensitivity of
- *  gyro as 16.4 LSB/DPS at scale factor of +/- 2000dps (FS_SEL==3)
- */
-const float AP_InertialSensor_MPU6050::_gyro_scale = (0.0174532f / 16.4f);
-
-/*
  *  RM-MPU-6000A-00.pdf, page 31, section 4.23 lists LSB sensitivity of
  *  accel as 4096 LSB/mg at scale factor of +/- 8g (AFS_SEL==2)
  *
