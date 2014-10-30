@@ -315,12 +315,102 @@ bool AP_InertialSensor_MPU6050::update( void )
 
 /*================ HARDWARE FUNCTIONS ==================== */
 
+static const uint8_t packet_size = 12;
+
+void AP_InertialSensor_MPU6050::_onFifoData() {
+	_fifo_count = (_data[0] << 8) | _data[1];
+	dbgclr();
+
+	//fifo overflow, possibly
+	if(_fifo_count == 1024) {
+		_i2c_sem->give();
+		return;
+	}
+
+	if(_fifo_count >= packet_size) {
+		dbgset();
+		if(!_i2c->readNonblocking(_addr, MPUREG_FIFO_R_W, packet_size, _data,
+				AP_HAL_MEMBERPROC(&AP_InertialSensor_MPU6050::_onSampleData))) {
+			_i2c_sem->give();
+		}
+	} else {
+		//no packets available, give back i2c bus
+		 _i2c_sem->give();
+	}
+
+	//hal.console->println(_fifo_count);
+}
+
+void AP_InertialSensor_MPU6050::_onSampleData() {
+	//fifo getting high... check fifo on next timer interrupt
+	if(_fifo_count > 512) {
+		_i2c_sem->give();
+		return;
+	}
+
+	dbgclr();
+	_accel_sum.y += (int16_t) (_data[0] << 8) | _data[1];
+	_accel_sum.x += (int16_t) (_data[2] << 8) | _data[3];
+	_accel_sum.z -= (int16_t) (_data[4] << 8) | _data[5];
+
+	_gyro_sum.y  += (int16_t) (_data[6] << 8) | _data[7];
+	_gyro_sum.x  += (int16_t) (_data[8] << 8) | _data[9];
+	_gyro_sum.z  -= (int16_t) (_data[10] << 8) | _data[11];
+
+	_sum_count++;
+	if (_sum_count == 0) {
+		// rollover - v unlikely
+		_accel_sum.zero();
+		_gyro_sum.zero();
+	}
+	_fifo_count -= packet_size;
+
+	if(_fifo_count >= packet_size) {
+		//read another packet
+		dbgset();
+		if(!_i2c->readNonblocking(_addr, MPUREG_FIFO_R_W, packet_size, _data,
+				AP_HAL_MEMBERPROC(&AP_InertialSensor_MPU6050::_onSampleData))) {
+			_i2c_sem->give();
+		}
+	} else {
+		 //give back the i2c bus
+		_i2c_sem->give();
+	}
+
+
+}
 
 /**
  * Timer process to poll for new data from the MPU6000.
  */
 void AP_InertialSensor_MPU6050::_poll_data(void)
 {
+	if (!_i2c_sem->take_nonblocking()) {
+		_sem_missed = true;
+		return;
+	}
+
+	//fifo is suspiciously high, check for overflow
+	if(_fifo_count > 512) {
+		hal.i2c->readRegister(_addr, MPUREG_INT_STATUS, _data);
+		if (_data[0] & BIT_FIFO_OVERFLOW) {
+			hal.uartE->println('*');
+			reset_fifo(INV_XYZ_ACCEL| INV_XYZ_GYRO);
+			_i2c_sem->give();
+			return;
+		}
+		_i2c_sem->give();
+	}
+
+	if(!hal.i2c->readNonblocking(_addr, MPUREG_FIFO_COUNTH, 2, _data,
+			AP_HAL_MEMBERPROC(&AP_InertialSensor_MPU6050::_onFifoData))) {
+		_i2c_sem->give();
+		return;
+	}
+	dbgset();
+
+
+#if 0
 	static uint8_t c = 0;
 	if(hal.scheduler->in_timerprocess()) {
 		c++;
@@ -328,13 +418,16 @@ void AP_InertialSensor_MPU6050::_poll_data(void)
 			return;
 		}
 		c = 0;
+
+		if (!_i2c_sem->take_nonblocking()) {
+			_sem_missed = true;
+			return;
+		}
+
 	} else {
 		c = 0;
-	}
-
-	if (!_i2c_sem->take_nonblocking()) {
-		_sem_missed = true;
-		return;
+		if(!_i2c_sem->take(100))
+			return;
 	}
 
 	// Read accelerometer FIFO to find out how many samples are available
@@ -403,9 +496,8 @@ void AP_InertialSensor_MPU6050::_poll_data(void)
 		}
 	}
 
-	_last_sample_timestamp = hal.scheduler->micros();
-
 	_i2c_sem->give();
+#endif
 }
 
 
@@ -424,7 +516,6 @@ void AP_InertialSensor_MPU6050::_register_write(uint8_t reg, uint8_t val)
 
 int16_t AP_InertialSensor_MPU6050::reset_fifo(uint8_t sensors)
 {
-    uint8_t data;
     _i2c->writeRegister(_addr, MPUREG_USER_CTRL, 0);
     _i2c->writeRegister(_addr, MPUREG_USER_CTRL, BIT_FIFO_RST);
     _i2c->writeRegister(_addr, MPUREG_USER_CTRL, BIT_FIFO_EN);

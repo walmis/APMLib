@@ -776,7 +776,7 @@ AP_Param param_loader(var_info);
   4000 = 0.1hz
   
  */
-#define HZ(f) (uint16_t)(MAIN_LOOP_RATE/f)
+#define HZ(f) ((uint16_t)(MAIN_LOOP_RATE/f))
 static const AP_Scheduler::Task scheduler_tasks[] PROGMEM = {
     { rc_loop,               HZ(100),     10 },
     { throttle_loop,         HZ(50),     45 },
@@ -960,8 +960,9 @@ static void perf_update(void)
 void loop()
 {
     // wait for an INS sample
+	//dbgset();
     ins.wait_for_sample();
-
+    //dbgclr();
     uint32_t timer = micros();
 
     // check loop time

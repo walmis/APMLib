@@ -297,7 +297,7 @@
  static void motor_test_stop() ;
  static void arm_motors_check() ;
  static void auto_disarm_check() ;
- static void init_arm_motors() ;
+ static bool init_arm_motors() ;
  static void pre_arm_checks(bool display_failure) ;
  static void pre_arm_rc_checks() ;
  static bool pre_arm_gps_checks(bool display_failure) ;

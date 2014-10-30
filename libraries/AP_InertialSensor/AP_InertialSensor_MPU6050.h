@@ -59,6 +59,12 @@ private:
 
     uint16_t					_num_samples;
 
+    uint16_t _fifo_count;
+    uint8_t _data[12];
+
+    void _onFifoData(); //i2c callback
+    void _onSampleData(); //i2c callback
+
     /*
      *  RM-MPU-6000A-00.pdf, page 33, section 4.25 lists LSB sensitivity of
      *  gyro as 16.4 LSB/DPS at scale factor of +/- 2000dps (FS_SEL==3)
