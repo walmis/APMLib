@@ -150,6 +150,9 @@ protected:
     // 2nd battery monitoring
     AP_Int8     _volt2_pin;                 /// board pin used to measure 2nd battery voltage
     AP_Float    _volt2_multiplier;          /// voltage on volt2 pin multiplier
+    AP_Float    _static_resistance;          /// static resistance in ohms, wires, connectors etc.
+    										///Voltage reading will be adjusted based on current/voltage drop
+    										//to read real battery voltage.
 
     /// internal variables
     float       _voltage;                   /// last read voltage

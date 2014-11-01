@@ -65,6 +65,8 @@ const AP_Param::GroupInfo AP_BattMonitor::var_info[] PROGMEM = {
     // @User: Advanced
     AP_GROUPINFO("VOLT2_MULT", 8, AP_BattMonitor, _volt2_multiplier, 1),
 
+    AP_GROUPINFO("STATIC_OHMS", 9, AP_BattMonitor, _static_resistance, 0),
+
     AP_GROUPEND
 };
 
@@ -108,6 +110,9 @@ AP_BattMonitor::read()
         // this copes with changing the pin at runtime
         _volt_pin_analog_source->set_pin(_volt_pin);
         _voltage = _volt_pin_analog_source->voltage_average() * _volt_multiplier;
+        if(_monitoring == AP_BATT_MONITOR_VOLTAGE_AND_CURRENT) {
+        	_voltage += _static_resistance * _current_amps;
+        }
         if (_volt2_pin_analog_source != NULL) {
             _voltage2 = _volt2_pin_analog_source->voltage_average() * _volt2_multiplier;
         }
