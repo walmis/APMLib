@@ -65,13 +65,9 @@ extern const AP_HAL::HAL& hal;
 //
 #define MTK_INIT_MSG \
     "$PMTK314,0,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n" /* GGA, GSA & VTG once every fix */ \
-    "$PMTK330,0*2E\r\n"                                 /* datum = WGS84 */ \
-    "$PMTK313,1*2E\r\n"                                 /* SBAS on */ \
-    "$PMTK301,2*2E\r\n"                                /* use SBAS data for DGPS */ \
-	"$PMTK220,100*2F\r\n" /* nmea update rate 5hz */ \
-	"$PMTK300,200,0,0,0,0*2F\r\n" /* fix update rate 5hz */\
-	"$PMTK397,0*23" \
-	"$PMTK251,57600*2C\r\n"
+	"$PMTK330,0*2E\r\n"                                 /* datum = WGS84 */ \
+	"$PMTK313,1*2E\r\n"                                 /* SBAS on */ \
+	"$PMTK301,2*2E\r\n"
 
 // ublox init messages /////////////////////////////////////////////////////////
 //
