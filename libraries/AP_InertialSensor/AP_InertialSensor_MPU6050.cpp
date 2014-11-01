@@ -190,7 +190,9 @@ AP_InertialSensor_MPU6050::AP_InertialSensor_MPU6050(AP_InertialSensor &imu) :
     _mpu6000_product_id(AP_PRODUCT_ID_NONE),
     _last_filter_hz(0),
     _error_count(0),
-    _addr(0x68)
+    _addr(0x68),
+	_fifo_count(0),
+	_fifo_reset_flag(0)
 {
 }
 
@@ -343,9 +345,17 @@ void AP_InertialSensor_MPU6050::_onFifoData() {
 
 void AP_InertialSensor_MPU6050::_onSampleData() {
 	//fifo getting high... check fifo on next timer interrupt
-	if(_fifo_count > 512) {
+	if(_fifo_count > 256) {
+		hal.uartE->println("x");
 		_i2c_sem->give();
 		return;
+	}
+
+	if(_fifo_count % packet_size != 0) {
+		hal.uartE->printf("%d\n", _fifo_count);
+		_fifo_reset_flag++;
+	} else {
+		_fifo_reset_flag = 0;
 	}
 
 	dbgclr();
@@ -376,8 +386,6 @@ void AP_InertialSensor_MPU6050::_onSampleData() {
 		 //give back the i2c bus
 		_i2c_sem->give();
 	}
-
-
 }
 
 /**
@@ -390,11 +398,19 @@ void AP_InertialSensor_MPU6050::_poll_data(void)
 		return;
 	}
 
+	if(_fifo_reset_flag > 1) {
+		reset_fifo(INV_XYZ_ACCEL| INV_XYZ_GYRO);
+		_fifo_reset_flag = 0;
+		_i2c_sem->give();
+		return;
+	}
+
 	//fifo is suspiciously high, check for overflow
 	if(_fifo_count > 512) {
+		hal.uartE->println('+');
 		hal.i2c->readRegister(_addr, MPUREG_INT_STATUS, _data);
 		if (_data[0] & BIT_FIFO_OVERFLOW) {
-			hal.uartE->println('*');
+
 			reset_fifo(INV_XYZ_ACCEL| INV_XYZ_GYRO);
 			_i2c_sem->give();
 			return;
@@ -516,13 +532,15 @@ void AP_InertialSensor_MPU6050::_register_write(uint8_t reg, uint8_t val)
 
 int16_t AP_InertialSensor_MPU6050::reset_fifo(uint8_t sensors)
 {
-    _i2c->writeRegister(_addr, MPUREG_USER_CTRL, 0);
+	hal.uartE->println('*');
+	_i2c->writeRegister(_addr, MPUREG_USER_CTRL, 0);
     _i2c->writeRegister(_addr, MPUREG_USER_CTRL, BIT_FIFO_RST);
     _i2c->writeRegister(_addr, MPUREG_USER_CTRL, BIT_FIFO_EN);
 
 	_sum_count = 0;
 	_accel_sum.zero();
 	_gyro_sum.zero();
+	_fifo_count = 0;
 
     return 0;
 }

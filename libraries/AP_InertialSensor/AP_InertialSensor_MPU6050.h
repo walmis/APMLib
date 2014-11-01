@@ -80,9 +80,6 @@ private:
     // support for updating filter at runtime
     uint8_t _last_filter_hz;
 
-    //one sample period
-    uint16_t _sample_time_usec;
-
     volatile bool _sem_missed;
 
     void _set_filter_register(uint8_t filter_hz, uint8_t default_filter);
@@ -94,6 +91,7 @@ private:
     Vector3l _accel_sum;
     Vector3l _gyro_sum;
     volatile int16_t _sum_count;
+    volatile uint8_t _fifo_reset_flag;
 
     //i2c address
     const uint8_t _addr;
