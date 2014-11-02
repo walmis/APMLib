@@ -19,7 +19,7 @@
  */
 
 #define COMPASS_MAGFIELD_EXPECTED      800        // pre arm will fail if mag field > 874 or < 185
-#define COMPASS_OFFSETS_MAX            1000         // PX4 onboard compass has high offsets
+#define COMPASS_OFFSETS_MAX            1500         // PX4 onboard compass has high offsets
 
 // uncomment the lines below to save on flash space if compiling for the APM using Arduino IDE.  Top items save the most flash space
 #define LOGGING_ENABLED       DISABLED            // disable dataflash logging to save 11K of flash space
