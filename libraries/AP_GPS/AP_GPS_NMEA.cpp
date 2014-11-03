@@ -66,8 +66,13 @@ extern const AP_HAL::HAL& hal;
 #define MTK_INIT_MSG \
     "$PMTK314,0,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n" /* GGA, GSA & VTG once every fix */ \
 	"$PMTK330,0*2E\r\n"                                 /* datum = WGS84 */ \
-	"$PMTK313,1*2E\r\n"                                 /* SBAS on */ \
-	"$PMTK301,2*2E\r\n"
+	"$PMTK313,0*2F\r\n"                                /* SBAS off */ \
+	"$PMTK301,0*2C\r\n"  								/* WAAS off */  \
+	"$PMTK220,200*2C\r\n" \
+	"$PMTK251,38400*27\r\n" \
+	"$PMTK300,200,0,0,0,0*2F\r\n" \
+	"$PMTK397,0*23\r\n" \
+	"$PMTK527,0.00*00\r\n"
 
 // ublox init messages /////////////////////////////////////////////////////////
 //
@@ -269,7 +274,6 @@ bool AP_GPS_NMEA::_term_complete()
                     fill_3d_velocity();
                     break;
                 case _GPS_SENTENCE_GPGGA:
-                    state.last_gps_time_ms = hal.scheduler->millis();
                     state.location.alt  = _new_altitude;
                     state.location.lat  = _new_latitude;
                     state.location.lng  = _new_longitude;
