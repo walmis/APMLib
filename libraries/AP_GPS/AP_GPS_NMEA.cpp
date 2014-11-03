@@ -289,6 +289,7 @@ bool AP_GPS_NMEA::_term_complete()
                 case _GPS_SENTENCE_GPGSA:
                 	state.status        = _new_fix_status;
                 	state.hdop 			= _new_hdop;
+                	return false;
                     break;
                 }
             } else {
