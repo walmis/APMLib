@@ -23,7 +23,15 @@ static LinuxSemaphore  i2cSemaphore;
 static LinuxI2CDriver  i2cDriver(&i2cSemaphore, "/dev/i2c-1");
 static LinuxSPIDeviceManager spiDeviceManager;
 static LinuxAnalogIn analogIn;
+
+/*
+  select between FRAM and FS
+ */
+#if LINUX_STORAGE_USE_FRAM == 1
+static LinuxStorage_FRAM storageDriver;
+#else
 static LinuxStorage storageDriver;
+#endif
 
 /*
   use the BBB gpio driver on ERLE and PXF
@@ -46,6 +54,8 @@ static Empty::EmptyGPIO gpioDriver;
 static LinuxRCInput_PRU rcinDriver;
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NAVIO
 static LinuxRCInput_Navio rcinDriver;
+#elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_ZYNQ
+static LinuxRCInput_ZYNQ rcinDriver;
 #else
 static LinuxRCInput rcinDriver;
 #endif
@@ -60,6 +70,8 @@ static LinuxRCOutput_PRU rcoutDriver;
  */
 #elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_NAVIO
 static LinuxRCOutput_Navio rcoutDriver;
+#elif CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_ZYNQ
+static LinuxRCOutput_ZYNQ rcoutDriver;
 #else
 static Empty::EmptyRCOutput rcoutDriver;
 #endif

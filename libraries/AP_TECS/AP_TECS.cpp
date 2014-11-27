@@ -20,6 +20,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] PROGMEM = {
     // @DisplayName: Maximum Climb Rate (metres/sec)
     // @Description: This is the best climb rate that the aircraft can achieve with the throttle set to THR_MAX and the airspeed set to the default value. For electric aircraft make sure this number can be achieved towards the end of flight when the battery voltage has reduced. The setting of this parameter can be checked by commanding a positive altitude change of 100m in loiter, RTL or guided mode. If the throttle required to climb is close to THR_MAX and the aircraft is maintaining airspeed, then this parameter is set correctly. If the airspeed starts to reduce, then the parameter is set to high, and if the throttle demand require to climb and maintain speed is noticeably less than THR_MAX, then either CLMB_MAX should be increased or THR_MAX reduced.
 	// @Increment: 0.1
+	// @Range: 0.1 20.0
 	// @User: User
     AP_GROUPINFO("CLMB_MAX",    0, AP_TECS, _maxClimbRate, 5.0f),
 
@@ -27,13 +28,14 @@ const AP_Param::GroupInfo AP_TECS::var_info[] PROGMEM = {
     // @DisplayName: Minimum Sink Rate (metres/sec)
     // @Description: This is the sink rate of the aircraft with the throttle set to THR_MIN and the same airspeed as used to measure CLMB_MAX.
 	// @Increment: 0.1
+	// @Range: 0.1 10.0
 	// @User: User
     AP_GROUPINFO("SINK_MIN",    1, AP_TECS, _minSinkRate, 2.0f),
 
     // @Param: TIME_CONST
     // @DisplayName: Controller time constant (sec)
     // @Description: This is the time constant of the TECS control algorithm. Smaller values make it faster to respond, large values make it slower to respond.
-	// @Range: 3.0-10.0
+	// @Range: 3.0 10.0
 	// @Increment: 0.2
 	// @User: Advanced
     AP_GROUPINFO("TIME_CONST",  2, AP_TECS, _timeConst, 5.0f),
@@ -41,7 +43,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] PROGMEM = {
     // @Param: THR_DAMP
     // @DisplayName: Controller throttle damping
     // @Description: This is the damping gain for the throttle demand loop. Increase to add damping  to correct for oscillations in speed and height.
-	// @Range: 0.1-1.0
+	// @Range: 0.1 1.0
 	// @Increment: 0.1
 	// @User: Advanced
     AP_GROUPINFO("THR_DAMP",    3, AP_TECS, _thrDamp, 0.5f),
@@ -49,7 +51,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] PROGMEM = {
     // @Param: INTEG_GAIN
     // @DisplayName: Controller integrator
     // @Description: This is the integrator gain on the control loop. Increase to increase the rate at which speed and height offsets are trimmed out
-	// @Range: 0.0-0.5
+	// @Range: 0.0 0.5
 	// @Increment: 0.02
 	// @User: Advanced
     AP_GROUPINFO("INTEG_GAIN", 4, AP_TECS, _integGain, 0.1f),
@@ -57,7 +59,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] PROGMEM = {
     // @Param: VERT_ACC
     // @DisplayName: Vertical Acceleration Limit (metres/sec^2)
     // @Description: This is the maximum vertical acceleration either up or down that the  controller will use to correct speed or height errors.
-	// @Range: 1.0-10.0
+	// @Range: 1.0 10.0
 	// @Increment: 0.5
 	// @User: Advanced
     AP_GROUPINFO("VERT_ACC",  5, AP_TECS, _vertAccLim, 7.0f),
@@ -65,7 +67,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] PROGMEM = {
     // @Param: HGT_OMEGA
     // @DisplayName: Height complementary filter frequency (radians/sec)
     // @Description: This is the cross-over frequency of the complementary filter used to fuse vertical acceleration and baro alt to obtain an estimate of height rate and height.
-	// @Range: 1.0-5.0
+	// @Range: 1.0 5.0
 	// @Increment: 0.05
 	// @User: Advanced
     AP_GROUPINFO("HGT_OMEGA", 6, AP_TECS, _hgtCompFiltOmega, 3.0f),
@@ -73,7 +75,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] PROGMEM = {
     // @Param: SPD_OMEGA
     // @DisplayName: Speed complementary filter frequency (radians/sec)
     // @Description: This is the cross-over frequency of the complementary filter used to fuse longitudinal acceleration and airspeed to obtain a lower noise and lag estimate of airspeed.
-	// @Range: 0.5-2.0
+	// @Range: 0.5 2.0
 	// @Increment: 0.05
 	// @User: Advanced
     AP_GROUPINFO("SPD_OMEGA", 7, AP_TECS, _spdCompFiltOmega, 2.0f),
@@ -81,7 +83,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] PROGMEM = {
     // @Param: RLL2THR
     // @DisplayName: Bank angle compensation gain
     // @Description: Increasing this gain turn increases the amount of throttle that will be used to compensate for the additional drag created by turning. Ideally this should be set to approximately 10 x the extra sink rate in m/s created by a 45 degree bank turn. Increase this gain if the aircraft initially loses energy in turns and reduce if the aircraft initially gains energy in turns. Efficient high aspect-ratio aircraft (eg powered sailplanes) can use a lower value, whereas inefficient low aspect-ratio models (eg delta wings) can use a higher value.
-	// @Range: 5.0 to 30.0
+	// @Range: 5.0 30.0
 	// @Increment: 1.0
 	// @User: Advanced
     AP_GROUPINFO("RLL2THR",  8, AP_TECS, _rollComp, 10.0f),
@@ -89,7 +91,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] PROGMEM = {
     // @Param: SPDWEIGHT
     // @DisplayName: Weighting applied to speed control
     // @Description: This parameter adjusts the amount of weighting that the pitch control applies to speed vs height errors. Setting it to 0.0 will cause the pitch control to control height and ignore speed errors. This will normally improve height accuracy but give larger airspeed errors. Setting it to 2.0 will cause the pitch control loop to control speed and ignore height errors. This will normally reduce airsped errors, but give larger height errors.	A value of 1.0 gives a balanced response and is the default.
-	// @Range: 0.0 to 2.0
+	// @Range: 0.0 2.0
 	// @Increment: 0.1
 	// @User: Advanced
     AP_GROUPINFO("SPDWEIGHT", 9, AP_TECS, _spdWeight, 1.0f),
@@ -97,22 +99,23 @@ const AP_Param::GroupInfo AP_TECS::var_info[] PROGMEM = {
     // @Param: PTCH_DAMP
     // @DisplayName: Controller pitch damping
     // @Description: This is the damping gain for the pitch demand loop. Increase to add damping  to correct for oscillations in speed and height.
-	// @Range: 0.1-1.0
+	// @Range: 0.1 1.0
 	// @Increment: 0.1
 	// @User: Advanced
     AP_GROUPINFO("PTCH_DAMP", 10, AP_TECS, _ptchDamp, 0.0f),
 
     // @Param: SINK_MAX
     // @DisplayName: Maximum Descent Rate (metres/sec)
-    // @Description: This sets the maximum descent rate that the controller will use.  If this value is too large, the aircraft will reach the pitch angle limit first and be enable to achieve the descent rate. This should be set to a value that can be achieved at the lower pitch angle limit.
+    // @Description: This sets the maximum descent rate that the controller will use.  If this value is too large, the aircraft will reach the pitch angle limit first and be unable to achieve the descent rate. This should be set to a value that can be achieved at the lower pitch angle limit.
 	// @Increment: 0.1
+	// @Range: 0.0 20.0
 	// @User: User
     AP_GROUPINFO("SINK_MAX",  11, AP_TECS, _maxSinkRate, 5.0f),
 
     // @Param: LAND_ARSPD
     // @DisplayName: Airspeed during landing approach (m/s)
     // @Description: When performing an autonomus landing, this value is used as the goal airspeed during approach.  Note that this parameter is not useful if your platform does not have an airspeed sensor (use TECS_LAND_THR instead).  If negative then this value is not used during landing.
-    // @Range: -1 to 127
+    // @Range: -1 127
     // @Increment: 1
     // @User: User
     AP_GROUPINFO("LAND_ARSPD", 12, AP_TECS, _landAirspeed, -1),
@@ -128,7 +131,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] PROGMEM = {
     // @Param: LAND_SPDWGT
     // @DisplayName: Weighting applied to speed control during landing.
     // @Description: Same as SPDWEIGHT parameter, with the exception that this parameter is applied during landing flight stages.  A value closer to 2 will result in the plane ignoring height error during landing and our experience has been that the plane will therefore keep the nose up -- sometimes good for a glider landing (with the side effect that you will likely glide a ways past the landing point).  A value closer to 0 results in the plane ignoring speed error -- use caution when lowering the value below 1 -- ignoring speed could result in a stall.
-	// @Range: 0.0 to 2.0
+	// @Range: 0.0 2.0
 	// @Increment: 0.1
 	// @User: Advanced
     AP_GROUPINFO("LAND_SPDWGT", 14, AP_TECS, _spdWeightLand, 1.0f),
@@ -152,7 +155,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] PROGMEM = {
     // @Param: LAND_SINK
     // @DisplayName: Sink rate for final landing stage
     // @Description: The sink rate in meters/second for the final stage of landing.
-	// @Range: 0.0 to 2.0
+	// @Range: 0.0 2.0
 	// @Increment: 0.1
 	// @User: Advanced
     AP_GROUPINFO("LAND_SINK", 17, AP_TECS, _land_sink, 0.25f),
@@ -160,7 +163,7 @@ const AP_Param::GroupInfo AP_TECS::var_info[] PROGMEM = {
     // @Param: TECS_LAND_TCONST
     // @DisplayName: Land controller time constant (sec)
     // @Description: This is the time constant of the TECS control algorithm when in final landing stage of flight. It should be smaller than TECS_TIME_CONST to allow for faster flare
-	// @Range: 1.0-5.0
+	// @Range: 1.0 5.0
 	// @Increment: 0.2
 	// @User: Advanced
     AP_GROUPINFO("LAND_TCONST", 18, AP_TECS, _landTimeConst, 2.0f),
@@ -242,7 +245,7 @@ void AP_TECS::update_50hz(float hgt_afe)
 
 }
 
-void AP_TECS::_update_speed(void)
+void AP_TECS::_update_speed(float load_factor)
 {
     // Calculate time in seconds since last update
     uint32_t now = hal.scheduler->micros();
@@ -255,6 +258,16 @@ void AP_TECS::_update_speed(void)
     _TAS_dem  = _EAS_dem * EAS2TAS;
 	_TASmax   = aparm.airspeed_max * EAS2TAS;
 	_TASmin   = aparm.airspeed_min * EAS2TAS;
+
+    if (aparm.stall_prevention) {
+        // when stall prevention is active we raise the mimimum
+        // airspeed based on aerodynamic load factor
+        _TASmin *= load_factor;
+    }
+
+    if (_TASmax < _TASmin) {
+        _TASmax = _TASmin;
+    }
     if (_landAirspeed >= 0 && _ahrs.airspeed_sensor_enabled() &&
            (_flight_stage == FLIGHT_LAND_APPROACH || _flight_stage== FLIGHT_LAND_FINAL)) {
 		_TAS_dem = _landAirspeed * EAS2TAS;
@@ -307,7 +320,7 @@ void AP_TECS::_update_speed_demand(void)
 		_TAS_dem     = _TASmin;
 	}
 	
-    // Constrain speed demand
+    // Constrain speed demand, taking into account the load factor
     _TAS_dem = constrain_float(_TAS_dem, _TASmin, _TASmax);
 
     // calculate velocity rate limits based on physical performance limits
@@ -455,7 +468,7 @@ void AP_TECS::_update_throttle(void)
     // If underspeed condition is set, then demand full throttle
     if (_underspeed)
     {
-        _throttle_dem_unc = 1.0f;
+        _throttle_dem = 1.0f;
     }
     else
     {
@@ -476,7 +489,10 @@ void AP_TECS::_update_throttle(void)
 		// Calculate PD + FF throttle
 		_throttle_dem = (_STE_error + STEdot_error * _thrDamp) * K_STE2Thr + ff_throttle;
 
-		// Rate limit PD + FF throttle
+        // Constrain throttle demand
+        _throttle_dem = constrain_float(_throttle_dem, _THRminf, _THRmaxf);
+
+        // Rate limit PD + FF throttle
 	    // Calculate the throttle increment from the specified slew time
 		if (aparm.throttle_slewrate != 0) {
 			float thrRateIncr = _DT * (_THRmaxf - _THRminf) * aparm.throttle_slewrate * 0.01f;
@@ -487,11 +503,12 @@ void AP_TECS::_update_throttle(void)
 			_last_throttle_dem = _throttle_dem;
 		}
 
-
-		// Calculate integrator state upper and lower limits
-		// Set to a value thqat will allow 0.1 (10%) throttle saturation to allow for noise on the demand
-        float integ_max = (_THRmaxf - _throttle_dem + 0.1f);
-		float integ_min = (_THRminf - _throttle_dem - 0.1f);
+        // Calculate integrator state upper and lower limits
+        // Set to a value that will allow 0.1 (10%) throttle saturation to allow for noise on the demand
+        // Additionally constrain the integrator state amplitude so that the integrator comes off limits faster.
+        float maxAmp = 0.5f*(_THRmaxf - _THRminf);
+        float integ_max = constrain_float((_THRmaxf - _throttle_dem + 0.1f),-maxAmp,maxAmp);
+        float integ_min = constrain_float((_THRminf - _throttle_dem - 0.1f),-maxAmp,maxAmp);
 
   		// Calculate integrator state, constraining state
 		// Set integrator to a max throttle value during climbout
@@ -704,7 +721,8 @@ void AP_TECS::update_pitch_throttle(int32_t hgt_dem_cm,
 									enum FlightStage flight_stage,
 									int32_t ptchMinCO_cd, 
 									int16_t throttle_nudge,
-									float hgt_afe) 
+									float hgt_afe,
+                                    float load_factor) 
 {
     // Calculate time in seconds since last update
     uint32_t now = hal.scheduler->micros();
@@ -712,7 +730,7 @@ void AP_TECS::update_pitch_throttle(int32_t hgt_dem_cm,
 	_update_pitch_throttle_last_usec = now;	
 
     // Update the speed estimate using a 2nd order complementary filter
-    _update_speed();
+    _update_speed(load_factor);
 
 	// Convert inputs
     _hgt_dem = hgt_dem_cm * 0.01f;

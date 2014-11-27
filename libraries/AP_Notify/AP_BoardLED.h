@@ -20,6 +20,7 @@
 
 #include <AP_Common.h>
 #include <AP_HAL.h>
+#include "Led.h"
 
 #define HIGH 1
 #define LOW 0
@@ -68,7 +69,7 @@
  # define HAL_GPIO_LED_OFF          LOW
 #elif CONFIG_HAL_BOARD == HAL_BOARD_XPCC
  # define HAL_GPIO_A_LED_PIN        ((1<<5) | 1)
- # define HAL_GPIO_B_LED_PIN        ((1<<5) | 2)
+ # define HAL_GPIO_B_LED_PIN        ((1<<5) | 4)
  # define HAL_GPIO_C_LED_PIN        ((1<<5) | 0)
  # define HAL_GPIO_LED_ON           HIGH
  # define HAL_GPIO_LED_OFF          LOW
@@ -76,11 +77,11 @@
 #error "Unknown board type in AP_Notify"
 #endif
 
-class AP_BoardLED
+class AP_BoardLED: public Led
 {
 public:
     // initialise the LED driver
-    void init(void);
+    bool init(void);
 
     // should be called at 50Hz
     void update(void);

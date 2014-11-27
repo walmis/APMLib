@@ -82,6 +82,9 @@ public:
 	// set radio_out for a function channel
 	static void set_radio(Aux_servo_function_t function, int16_t value);
 
+	// set radio_out for all channels matching the given function type, allow radio_trim to center servo
+	static void set_radio_trimmed(Aux_servo_function_t function, int16_t value);
+
 	// set and save the trim for a function channel to radio_in
 	static void set_radio_trim(Aux_servo_function_t function);
 
@@ -120,6 +123,9 @@ public:
     
     // prevent a channel from being used for auxillary functions
     static void disable_aux_channel(uint8_t channel);
+
+    // return the current function for a channel
+    static Aux_servo_function_t channel_function(uint8_t channel);
 
 private:
     static uint32_t _function_mask;

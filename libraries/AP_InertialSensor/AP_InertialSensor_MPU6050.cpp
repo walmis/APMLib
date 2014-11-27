@@ -321,7 +321,7 @@ static const uint8_t packet_size = 12;
 
 void AP_InertialSensor_MPU6050::_onFifoData() {
 	_fifo_count = (_data[0] << 8) | _data[1];
-	dbgclr();
+	//dbgclr();
 
 	//fifo overflow, possibly
 	if(_fifo_count == 1024) {
@@ -330,7 +330,7 @@ void AP_InertialSensor_MPU6050::_onFifoData() {
 	}
 
 	if(_fifo_count >= packet_size) {
-		dbgset();
+		//dbgset();
 		if(!_i2c->readNonblocking(_addr, MPUREG_FIFO_R_W, packet_size, _data,
 				AP_HAL_MEMBERPROC(&AP_InertialSensor_MPU6050::_onSampleData))) {
 			_i2c_sem->give();
@@ -346,19 +346,19 @@ void AP_InertialSensor_MPU6050::_onFifoData() {
 void AP_InertialSensor_MPU6050::_onSampleData() {
 	//fifo getting high... check fifo on next timer interrupt
 	if(_fifo_count > 256) {
-		hal.uartE->println("x");
+		//hal.uartE->println("x");
 		_i2c_sem->give();
 		return;
 	}
 
 	if(_fifo_count % packet_size != 0) {
-		hal.uartE->printf("%d\n", _fifo_count);
+		//hal.uartE->printf("%d\n", _fifo_count);
 		_fifo_reset_flag++;
 	} else {
 		_fifo_reset_flag = 0;
 	}
 
-	dbgclr();
+	//dbgclr();
 	_accel_sum.y += (int16_t) (_data[0] << 8) | _data[1];
 	_accel_sum.x += (int16_t) (_data[2] << 8) | _data[3];
 	_accel_sum.z -= (int16_t) (_data[4] << 8) | _data[5];
@@ -377,7 +377,7 @@ void AP_InertialSensor_MPU6050::_onSampleData() {
 
 	if(_fifo_count >= packet_size) {
 		//read another packet
-		dbgset();
+		//dbgset();
 		if(!_i2c->readNonblocking(_addr, MPUREG_FIFO_R_W, packet_size, _data,
 				AP_HAL_MEMBERPROC(&AP_InertialSensor_MPU6050::_onSampleData))) {
 			_i2c_sem->give();
@@ -407,7 +407,6 @@ void AP_InertialSensor_MPU6050::_poll_data(void)
 
 	//fifo is suspiciously high, check for overflow
 	if(_fifo_count > 512) {
-		hal.uartE->println('+');
 		hal.i2c->readRegister(_addr, MPUREG_INT_STATUS, _data);
 		if (_data[0] & BIT_FIFO_OVERFLOW) {
 
@@ -423,7 +422,7 @@ void AP_InertialSensor_MPU6050::_poll_data(void)
 		_i2c_sem->give();
 		return;
 	}
-	dbgset();
+	//dbgset();
 
 
 #if 0
