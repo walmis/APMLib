@@ -226,6 +226,8 @@ static DataFlash_APM2 DataFlash;
 static DataFlash_APM1 DataFlash;
 #elif defined(HAL_BOARD_LOG_DIRECTORY)
 static DataFlash_File DataFlash(HAL_BOARD_LOG_DIRECTORY);
+#elif CONFIG_HAL_BOARD == HAL_BOARD_XPCC
+static DataFlash_Xpcc DataFlash;
 #else
 static DataFlash_Empty DataFlash;
 #endif

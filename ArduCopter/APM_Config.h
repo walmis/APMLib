@@ -22,7 +22,7 @@
 #define COMPASS_OFFSETS_MAX            1500         // PX4 onboard compass has high offsets
 
 // uncomment the lines below to save on flash space if compiling for the APM using Arduino IDE.  Top items save the most flash space
-#define LOGGING_ENABLED       DISABLED            // disable dataflash logging to save 11K of flash space
+#define LOGGING_ENABLED       ENABLED            // disable dataflash logging to save 11K of flash space
 #define FRSKY_TELEM_ENABLED   DISABLED
 
 //#define MOUNT                 DISABLED            // disable the camera gimbal to save 8K of flash space
@@ -42,8 +42,8 @@
 
 
 // features below are disabled by default on all boards
-//#define SPRAYER               ENABLED             // enable the crop sprayer feature (two ESC controlled pumps the speed of which depends upon the vehicle's horizontal velocity)
-
+#define SPRAYER               DISABLED             // enable the crop sprayer feature (two ESC controlled pumps the speed of which depends upon the vehicle's horizontal velocity)
+#define EPM_ENABLED 		  DISABLED
 // other settings
 //#define THROTTLE_IN_DEADBAND   100                // redefine size of throttle deadband in pwm (0 ~ 1000)
 //#define LAND_REQUIRE_MIN_THROTTLE_TO_DISARM   DISABLED    // when set to DISABLED vehicle will disarm after landing (in LAND mode or RTL) even if pilot has not put throttle to zero
