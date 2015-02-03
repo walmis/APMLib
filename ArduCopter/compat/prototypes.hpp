@@ -307,8 +307,8 @@ static uint8_t mavlink_motor_test_start(mavlink_channel_t chan,
 static void motor_test_stop();
 static void arm_motors_check();
 static void auto_disarm_check();
-static bool init_arm_motors();
-static void pre_arm_checks(bool display_failure);
+static bool init_arm_motors(bool arming_from_gcs);
+static bool pre_arm_checks(bool display_failure);
 static void pre_arm_rc_checks();
 static bool pre_arm_gps_checks(bool display_failure);
 static bool arm_checks(bool display_failure, bool arming_from_gcs);
@@ -391,5 +391,16 @@ static void guided_set_destination_spline(const Vector3f& destination,
 		const Vector3f& velocity);
 static void guided_spline_control_run();
 Vector3f pv_location_to_vector_with_default(const Location& loc, const Vector3f& default_posvec);
+
+static bool position_ok();
+static bool mode_has_manual_throttle(uint8_t mode);
+static void set_mode_RTL_or_land_with_pause();
+static float get_land_descent_speed();
+static bool optflow_position_ok();
+static void guided_posvel_control_run();
+static void guided_set_destination_posvel(const Vector3f& destination, const Vector3f& velocity);
+static void update_home();
+static void motors_output();
+static void landinggear_update();
 
 #endif /* ARDUCOPTER_HPP_ */
