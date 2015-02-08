@@ -1192,7 +1192,6 @@ void GCS_MAVLINK::send_battery_status(const AP_BattMonitor &battery){
 			battery.current_total_mah(),
 			-1,
 			battery.capacity_remaining_pct());
-	hal.console->print("send battery status\n");
 }
 
 /*
