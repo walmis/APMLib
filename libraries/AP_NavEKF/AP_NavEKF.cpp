@@ -737,11 +737,11 @@ void NavEKF::UpdateFilter()
 // select fusion of velocity, position and height measurements
 void NavEKF::SelectVelPosFusion()
 {
-    // check for new data, specify which measurements should be used and check data for freshness
-    if (PV_AidingMode == AID_ABSOLUTE) {
+    // check for and read new GPS data
+    readGpsData();
 
-        // check for and read new GPS data
-        readGpsData();
+    // Specify which measurements should be used and check data for freshness
+    if (PV_AidingMode == AID_ABSOLUTE) {
 
         // check if we can use opticalflow as a backup
         bool optFlowBackup = (flowDataValid && !hgtTimeout);
@@ -4006,11 +4006,12 @@ void NavEKF::readGpsData()
         // calculate a position offset which is applied to NE position and velocity wherever it is used throughout code to allow GPS position jumps to be accommodated gradually
         decayGpsOffset();
     }
-    // If too long since last fix time or we are not allowed to use GPS, we declare no GPS available for use
-    if ((imuSampleTime_ms - lastFixTime_ms < 1000) || _fusionModeGPS == 3) {
-        gpsNotAvailable = false;
-    } else {
+
+    // If no previous GPS lock or told not to use it, we declare the  GPS unavailable available for use
+    if ((_ahrs->get_gps().status() < AP_GPS::GPS_OK_FIX_3D) || _fusionModeGPS == 3) {
         gpsNotAvailable = true;
+    } else {
+        gpsNotAvailable = false;
     }
 }
 
@@ -4620,6 +4621,8 @@ void NavEKF::performArmingChecks()
                 PV_AidingMode = AID_ABSOLUTE; // we have GPS data and can estimate all vehicle states
                 constPosMode = false;
                 constVelMode = false;
+                // we reset the position in case the initial GPS setting the origin was off or the vehicle has been moved a significant distance
+                ResetPosition();
             }
         }
         // Reset filter positon, height and velocity states on arming or disarming

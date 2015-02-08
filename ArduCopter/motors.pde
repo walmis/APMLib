@@ -63,7 +63,6 @@ static void arm_motors_check()
 
     // Yaw is centered so reset arming counter
     }else{
-        AP_Notify::flags.arming_failed = false;
         arming_counter = 0;
     }
 }
@@ -110,7 +109,7 @@ static bool init_arm_motors(bool arming_from_gcs)
 
     // run pre-arm-checks and display failures
     if(!pre_arm_checks(true) || !arm_checks(true, arming_from_gcs)) {
-        AP_Notify::flags.arming_failed = true;
+        AP_Notify::events.arming_failed = true;
         in_arm_motors = false;
         return false;
     }
@@ -473,6 +472,16 @@ static void pre_arm_rc_checks()
 
     // check channels 3 & 4 have min <= 1300 and max >= 1700
     if (g.rc_3.radio_min > 1300 || g.rc_3.radio_max < 1700 || g.rc_4.radio_min > 1300 || g.rc_4.radio_max < 1700) {
+        return;
+    }
+
+    // check channels 1 & 2 have trim >= 1300 and <= 1700
+    if (g.rc_1.radio_trim < 1300 || g.rc_1.radio_trim > 1700 || g.rc_2.radio_trim < 1300 || g.rc_2.radio_trim > 1700) {
+        return;
+    }
+
+    // check channel 4 has trim >= 1300 and <= 1700
+    if (g.rc_4.radio_trim < 1300 || g.rc_4.radio_trim > 1700) {
         return;
     }
 

@@ -385,7 +385,7 @@ const AP_Param::GroupInfo AP_Mount::var_info[] PROGMEM = {
     AP_GROUPEND
 };
 
-AP_Mount::AP_Mount(const AP_AHRS &ahrs, const struct Location &current_loc) :
+AP_Mount::AP_Mount(const AP_AHRS_MOUNT &ahrs, const struct Location &current_loc) :
     _ahrs(ahrs),
     _current_loc(current_loc),
     _num_instances(0),
@@ -420,10 +420,12 @@ void AP_Mount::init(const AP_SerialManager& serial_manager)
             _backends[instance] = new AP_Mount_Servo(*this, state[instance], instance);
             _num_instances++;
 
+#if AP_AHRS_NAVEKF_AVAILABLE
         // check for MAVLink mounts
         } else if (mount_type == Mount_Type_MAVLink) {
             _backends[instance] = new AP_Mount_MAVLink(*this, state[instance], instance);
             _num_instances++;
+#endif
 
         // check for Alexmos mounts
         } else if (mount_type == Mount_Type_Alexmos) {
@@ -548,3 +550,22 @@ void AP_Mount::set_roi_target(uint8_t instance, const struct Location &target_lo
     }
 }
 
+// pass a GIMBAL_REPORT message to the backend
+void AP_Mount::handle_gimbal_report(mavlink_channel_t chan, mavlink_message_t *msg)
+{
+    for (uint8_t instance=0; instance<AP_MOUNT_MAX_INSTANCES; instance++) {
+        if (_backends[instance] != NULL) {
+            _backends[instance]->handle_gimbal_report(chan, msg);
+        }
+    }    
+}
+
+// send a GIMBAL_REPORT message to the GCS
+void AP_Mount::send_gimbal_report(mavlink_channel_t chan)
+{
+    for (uint8_t instance=0; instance<AP_MOUNT_MAX_INSTANCES; instance++) {
+        if (_backends[instance] != NULL) {
+            _backends[instance]->send_gimbal_report(chan);
+        }
+    }    
+}

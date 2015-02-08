@@ -398,6 +398,16 @@ void GCS_MAVLINK::handle_mission_write_partial_list(AP_Mission &mission, mavlink
     waypoint_request_last= packet.end_index;
 }
 
+
+/*
+  handle a GIMBAL_REPORT mavlink packet
+ */
+void GCS_MAVLINK::handle_gimbal_report(AP_Mount &mount, mavlink_message_t *msg) const
+{
+    mount.handle_gimbal_report(chan, msg);
+}
+
+
 /*
   return true if a channel has flow control
  */
@@ -1005,7 +1015,6 @@ void GCS_MAVLINK::send_radio_in(uint8_t receiver_rssi)
         values[7],
         receiver_rssi);
 
-#if HAL_CPU_CLASS > HAL_CPU_CLASS_16
     if (hal.rcin->num_channels() > 8 && 
         comm_get_txspace(chan) >= MAVLINK_MSG_ID_RC_CHANNELS_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES) {
         mavlink_msg_rc_channels_send(
@@ -1032,7 +1041,6 @@ void GCS_MAVLINK::send_radio_in(uint8_t receiver_rssi)
             hal.rcin->read(CH_18),
             receiver_rssi);        
     }
-#endif
 }
 
 void GCS_MAVLINK::send_raw_imu(const AP_InertialSensor &ins, const Compass &compass)
