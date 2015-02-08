@@ -657,6 +657,11 @@ bool GCS_MAVLINK::try_send_message(enum ap_message id)
         // unused
         break;
 
+    case MSG_BATTERY_STATUS:
+    	CHECK_PAYLOAD_SIZE(BATTERY_STATUS);
+    	send_battery_status(battery);
+    	break;
+
     case MSG_RETRY_DEFERRED:
         break; // just here to prevent a warning
 
@@ -872,6 +877,7 @@ GCS_MAVLINK::data_stream_send(void)
     if (stream_trigger(STREAM_EXTRA3)) {
         send_message(MSG_AHRS);
         send_message(MSG_HWSTATUS);
+        send_message(MSG_BATTERY_STATUS);
         send_message(MSG_SYSTEM_TIME);
         send_message(MSG_RANGEFINDER);
 #if AP_TERRAIN_AVAILABLE

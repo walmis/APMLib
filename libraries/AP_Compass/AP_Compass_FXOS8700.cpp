@@ -260,13 +260,6 @@ AP_Compass_FXOS8700::init()
 
     _initialised = false;
 
-
-#if CONFIG_HAL_BOARD == HAL_BOARD_XPCC
-    //write MPU6050 register to enable i2c passthrough
-    hal.i2c->writeRegister(0x68, 0x6A, 0x00);
-    hal.i2c->writeRegister(0x68, 0x6B, 0x00);
-    hal.i2c->writeRegister(0x68, 0x37, 0x02);
-#endif
     //sw reset
     write_register(FXOS8700_CTRL_REG2, 0b01000000);
     hal.scheduler->delay(5);

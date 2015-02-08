@@ -1170,6 +1170,23 @@ void GCS_MAVLINK::send_battery2(const AP_BattMonitor &battery)
     }
 }
 
+void GCS_MAVLINK::send_battery_status(const AP_BattMonitor &battery){
+	uint16_t voltages[10];
+	memset(voltages, 0, sizeof(uint16_t)*10);
+	voltages[0] = battery.voltage()/1000;
+	mavlink_msg_battery_status_send(chan,
+			0,
+			MAV_BATTERY_FUNCTION_ALL,
+			MAV_BATTERY_TYPE_LIPO,
+			INT16_MAX,
+			voltages,
+			battery.current_amps()*100,
+			battery.current_total_mah(),
+			-1,
+			battery.capacity_remaining_pct());
+	hal.console->print("send battery status\n");
+}
+
 /*
   handle a SET_MODE MAVLink message
  */
