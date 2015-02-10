@@ -9,8 +9,9 @@
 #include "AP_HAL_Boards.h"
 #include "AP_HAL_Macros.h"
 
-extern void dbgset();
-extern void dbgclr();
+extern void dbgset(uint8_t i =0);
+extern void dbgclr(uint8_t i =0);
+extern void dbgtgl(uint8_t i =0);
 
 class DBGTimer {
 public:

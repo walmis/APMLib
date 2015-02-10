@@ -11,6 +11,9 @@ extern const AP_HAL::HAL& hal;
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_APM2
 #define MPU6000_DRDY_PIN 70
+#elif CONFIG_HAL_BOARD == HAL_BOARD_XPCC
+#define P2_6 ((2<<5)|6)
+#define MPU6000_DRDY_PIN P2_6
 #elif CONFIG_HAL_BOARD == HAL_BOARD_LINUX
 #if CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_ERLE || CONFIG_HAL_BOARD_SUBTYPE == HAL_BOARD_SUBTYPE_LINUX_PXF
 #include "../AP_HAL_Linux/GPIO.h"
@@ -181,7 +184,6 @@ extern const AP_HAL::HAL& hal;
 
 AP_InertialSensor_MPU6050::AP_InertialSensor_MPU6050(AP_InertialSensor &imu) :
 	AP_InertialSensor_Backend(imu),
-    _drdy_pin(NULL),
     _i2c(NULL),
     _i2c_sem(NULL),
     _num_samples(0),
@@ -203,11 +205,6 @@ uint16_t AP_InertialSensor_MPU6050::_init_sensor( )
 
     _i2c = hal.i2c;
     _i2c_sem = _i2c->get_semaphore();
-
-#ifdef MPU6000_DRDY_PIN
-    _drdy_pin = hal.gpio->channel(MPU6000_DRDY_PIN);
-    _drdy_pin->mode(HAL_GPIO_INPUT);
-#endif
 
     hal.scheduler->suspend_timer_procs();
 
@@ -337,6 +334,7 @@ void AP_InertialSensor_MPU6050::_onFifoData() {
 		}
 	} else {
 		//no packets available, give back i2c bus
+		//dbgclr(1);
 		 _i2c_sem->give();
 	}
 
@@ -384,6 +382,7 @@ void AP_InertialSensor_MPU6050::_onSampleData() {
 		}
 	} else {
 		 //give back the i2c bus
+		//dbgclr(1);
 		_i2c_sem->give();
 	}
 }
@@ -393,10 +392,17 @@ void AP_InertialSensor_MPU6050::_onSampleData() {
  */
 void AP_InertialSensor_MPU6050::_poll_data(void)
 {
+#ifdef MPU6000_DRDY_PIN
+	if(!hal.gpio->read(MPU6000_DRDY_PIN)) {
+		return;
+	}
+#endif
+
 	if (!_i2c_sem->take_nonblocking()) {
 		_sem_missed = true;
 		return;
 	}
+	//dbgset(1);
 
 	if(_fifo_reset_flag > 1) {
 		reset_fifo(INV_XYZ_ACCEL| INV_XYZ_GYRO);
@@ -414,7 +420,6 @@ void AP_InertialSensor_MPU6050::_poll_data(void)
 			_i2c_sem->give();
 			return;
 		}
-		_i2c_sem->give();
 	}
 
 	if(!hal.i2c->readNonblocking(_addr, MPUREG_FIFO_COUNTH, 2, _data,
@@ -422,7 +427,6 @@ void AP_InertialSensor_MPU6050::_poll_data(void)
 		_i2c_sem->give();
 		return;
 	}
-	//dbgset();
 
 
 #if 0

@@ -19,8 +19,8 @@ public:
 
     static AP_InertialSensor_Backend *detect(AP_InertialSensor &imu);
 
-    bool gyro_sample_available(void) { return _sum_count >= 0; }
-    bool accel_sample_available(void) { return _sum_count >= 0; }
+    bool gyro_sample_available(void) { return _sum_count > 0; }
+    bool accel_sample_available(void) { return _sum_count > 0; }
 
     /* Concrete implementation of AP_InertialSensor functions: */
     bool                update();
@@ -43,7 +43,6 @@ protected:
     uint8_t _gyro_instance;
     uint8_t _accel_instance;
 private:
-    AP_HAL::DigitalSource *_drdy_pin;
     int16_t reset_fifo(uint8_t sensors);
     bool configure_fifo(uint8_t sensors);
 

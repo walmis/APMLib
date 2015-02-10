@@ -220,17 +220,20 @@ void AP_Compass_FXOS8700::accumulate(void)
         return;
     }
    uint32_t tnow = hal.scheduler->micros();
-   if (_healthy[0] && _accum_count != 0 && (tnow - _last_accum_time) < 20000) {
+   if (_healthy[0] && _accum_count != 0 && (tnow - _last_accum_time) < 10000) {
 	  // the compass gets new data at 75Hz
 	  return;
    }
 
    if (!_i2c_sem->take_nonblocking()) {
+
        // the bus is busy - try again later
        return;
    }
+   dbgset();
    bool result = read_raw();
    _i2c_sem->give();
+   dbgclr();
 
    if (result) {
 	  _mag_x_accum += _mag_x;
@@ -245,6 +248,7 @@ void AP_Compass_FXOS8700::accumulate(void)
 	  }
 	  _last_accum_time = tnow;
    }
+
 }
 
 // Public Methods //////////////////////////////////////////////////////////////
