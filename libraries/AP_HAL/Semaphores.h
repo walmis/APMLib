@@ -10,6 +10,14 @@ class AP_HAL::Semaphore {
 public:
     virtual bool take(uint32_t timeout_ms) WARN_IF_UNUSED = 0 ;
     virtual bool take_nonblocking() WARN_IF_UNUSED = 0;
+    /* Take semaphore asynchronuously
+     * if semaphore is locked, this function will return false
+     * and callback will be called when semaphore is released.
+     * But if semaphore is unlocked, then this function will return true
+     * and the callback will not be executed.
+     * Impl: Callback should not be called from interrupt context.
+     */
+    virtual bool take_async(AP_HAL::MemberProc callback) WARN_IF_UNUSED = 0;
     virtual bool give() = 0;
 };
 
