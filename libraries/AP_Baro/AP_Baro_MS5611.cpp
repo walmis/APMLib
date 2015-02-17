@@ -97,6 +97,9 @@ void AP_SerialBus_SPI::sem_give()
     _spi_sem->give();
 }
 
+bool AP_SerialBus_SPI::sem_take_async(AP_HAL::MemberProc cb) {
+    return _spi_sem->take_async(cb);
+}
 
 /// I2C SerialBus
 AP_SerialBus_I2C::AP_SerialBus_I2C(uint8_t addr) :
@@ -150,6 +153,10 @@ bool AP_SerialBus_I2C::sem_take_nonblocking()
 void AP_SerialBus_I2C::sem_give()
 {
     _i2c_sem->give();
+}
+
+bool AP_SerialBus_I2C::sem_take_async(AP_HAL::MemberProc cb) {
+	return _i2c_sem->take_async(cb);
 }
 
 /*
@@ -262,10 +269,11 @@ void AP_Baro_MS5611::_timer(void)
         return;
     }
 
-    if (!_serial->sem_take_nonblocking()) {
-        return;
-    }
+	if (!_serial->sem_take_async(AP_HAL_MEMBERPROC(&AP_Baro_MS5611::_timer))) {
+		return;
+	}
 
+    dbgset();
     if (_state == 0) {
         // On state 0 we read temp
         uint32_t d2 = _serial->read_24bits(0);
@@ -307,7 +315,7 @@ void AP_Baro_MS5611::_timer(void)
             _serial->write(CMD_CONVERT_D1_OSR4096); // Command to read pressure
         }
     }
-
+    dbgclr();
     _last_timer = hal.scheduler->micros();
     _serial->sem_give();
 }

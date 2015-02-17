@@ -225,7 +225,7 @@ void AP_Compass_FXOS8700::accumulate(void)
 	  return;
    }
 
-   if (!_i2c_sem->take_nonblocking()) {
+   if (!_i2c_sem->take_async(AP_HAL_MEMBERPROC(&AP_Compass_FXOS8700::accumulate))) {
 
        // the bus is busy - try again later
        return;

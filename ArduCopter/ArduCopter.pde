@@ -933,9 +933,9 @@ static void perf_update(void)
 void loop()
 {
     // wait for an INS sample
-	//dbgset();
+	//dbgset(1);
     ins.wait_for_sample();
-    //dbgclr();
+    //dbgclr(1);
     uint32_t timer = micros();
 
     // check loop time
