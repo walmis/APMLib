@@ -86,7 +86,7 @@ static NOINLINE void send_heartbeat(mavlink_channel_t chan)
 #endif
 
     // we are armed if we are not initialising
-    if (control_mode != INITIALISING && ahrs.get_armed()) {
+    if (control_mode != INITIALISING && hal.util->get_soft_armed()) {
         base_mode |= MAV_MODE_FLAG_SAFETY_ARMED;
     }
 
@@ -1219,6 +1219,14 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
             }
             break;
 
+        case MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES: {
+            if (packet.param1 == 1) {
+                gcs[chan-MAVLINK_COMM_0].send_autopilot_version();
+                result = MAV_RESULT_ACCEPTED;
+            }
+            break;
+        }
+
         default:
             break;
         }
@@ -1558,6 +1566,10 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
 #if AP_TERRAIN_AVAILABLE
         terrain.handle_data(chan, msg);
 #endif
+        break;
+
+    case MAVLINK_MSG_ID_AUTOPILOT_VERSION_REQUEST:
+        gcs[chan-MAVLINK_COMM_0].send_autopilot_version();
         break;
         
     } // end switch

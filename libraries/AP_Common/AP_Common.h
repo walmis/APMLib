@@ -38,6 +38,9 @@
 #define PACKED __attribute__((__packed__))
 #endif
 
+// used to mark a function that may be unused in some builds
+#define UNUSED_FUNCTION __attribute__((unused))
+
 // this can be used to optimize individual functions
 #define OPTIMIZE(level) __attribute__((optimize(level)))
 
@@ -53,7 +56,7 @@
 // in conjunction with a suitably modified Arduino IDE; never define for
 // production as it generates bad code.
 //
-#if PRINTF_FORMAT_WARNING_DEBUG
+#if defined(PRINTF_FORMAT_WARNING_DEBUG)
  # undef PSTR
  # define PSTR(_x)               _x             // help the compiler with printf_P
  # define float double                  // silence spurious format warnings for %f

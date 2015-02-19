@@ -140,12 +140,11 @@ static bool init_arm_motors(bool arming_from_gcs)
 
     initial_armed_bearing = ahrs.yaw_sensor;
 
-    // Reset home position
-    // -------------------
-    if (ap.home_is_set) {
-        init_home();
-        calc_distance_and_bearing();
+    // Reset home position if it has already been set before (but not locked)
+    if (ap.home_state == HOME_SET_NOT_LOCKED) {
+        set_home_to_current_location();
     }
+    calc_distance_and_bearing();
 
     if(did_ground_start == false) {
         startup_ground(true);
@@ -171,7 +170,7 @@ static bool init_arm_motors(bool arming_from_gcs)
 
     // enable gps velocity based centrefugal force compensation
     ahrs.set_correct_centrifugal(true);
-    ahrs.set_armed(true);
+    hal.util->set_soft_armed(true);
 
     // set hover throttle
     motors.set_mid_throttle(g.throttle_mid);
@@ -198,6 +197,9 @@ static bool init_arm_motors(bool arming_from_gcs)
 
     // reenable failsafe
     failsafe_enable();
+
+    // perf monitor ignores delay due to arming
+    perf_ignore_this_loop();
 
     // flag exiting this function
     in_arm_motors = false;
@@ -320,6 +322,7 @@ static bool pre_arm_checks(bool display_failure)
         return false;
     }
 
+#if AC_FENCE == ENABLED
     // check fence is initialised
     if(!fence.pre_arm_check()) {
         if (display_failure) {
@@ -327,6 +330,7 @@ static bool pre_arm_checks(bool display_failure)
         }
         return false;
     }
+#endif
 
     // check INS
     if ((g.arming_check == ARMING_CHECK_ALL) || (g.arming_check & ARMING_CHECK_INS)) {
@@ -547,6 +551,15 @@ static bool pre_arm_gps_checks(bool display_failure)
         return false;
     }
 
+    // check home and EKF origin are not too far
+    if (far_from_EKF_origin(ahrs.get_home())) {
+        if (display_failure) {
+            gcs_send_text_P(SEVERITY_HIGH,PSTR("PreArm: EKF-home variance"));
+        }
+        AP_Notify::flags.pre_arm_gps_check = false;
+        return false;
+    }
+
     // warn about hdop separately - to prevent user confusion with no gps lock
     if (gps.get_hdop() > g.gps_hdop_good) {
         if (display_failure) {
@@ -710,7 +723,7 @@ static void init_disarm_motors()
 
     // disable gps velocity based centrefugal force compensation
     ahrs.set_correct_centrifugal(false);
-    ahrs.set_armed(false);
+    hal.util->set_soft_armed(false);
 }
 
 // motors_output - send output to motors library which will adjust and send to ESCs and servos

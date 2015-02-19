@@ -595,6 +595,14 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
                 break;
             }
 
+            case MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES: {
+                if (packet.param1 == 1) {
+                    gcs[chan-MAVLINK_COMM_0].send_autopilot_version();
+                    result = MAV_RESULT_ACCEPTED;
+                }
+                break;
+            }
+
             default:
                 break;
         }
@@ -747,6 +755,10 @@ mission_failed:
         handle_serial_control(msg, gps);
         break;
 #endif
+
+    case MAVLINK_MSG_ID_AUTOPILOT_VERSION_REQUEST:
+        gcs[chan-MAVLINK_COMM_0].send_autopilot_version();
+        break;
 
     } // end switch
 } // end handle mavlink

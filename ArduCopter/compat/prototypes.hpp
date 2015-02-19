@@ -321,11 +321,11 @@ static void calc_wp_distance();
 static void calc_wp_bearing();
 static void calc_home_distance_and_bearing();
 static void run_autopilot();
-void perf_info_reset();
-void perf_info_check_loop_time(uint32_t time_in_micros);
-uint16_t perf_info_get_num_loops();
-uint32_t perf_info_get_max_time();
-uint16_t perf_info_get_num_long_running();
+static void perf_info_reset();
+static void perf_info_check_loop_time(uint32_t time_in_micros);
+static uint16_t perf_info_get_num_loops();
+static uint32_t perf_info_get_max_time();
+static uint16_t perf_info_get_num_long_running();
 Vector3f pv_location_to_vector(const Location& loc);
 float pv_get_bearing_cd(const Vector3f &origin, const Vector3f &destination);
 float pv_get_horizontal_distance_cm(const Vector3f &origin,
@@ -402,5 +402,17 @@ static void guided_set_destination_posvel(const Vector3f& destination, const Vec
 static void update_home();
 static void motors_output();
 static void landinggear_update();
+float pv_alt_above_home(float alt_above_origin_cm);
+float pv_alt_above_origin(float alt_above_home_cm);
+static void perf_ignore_this_loop();
+static bool set_home(const Location& loc);
+static bool set_home_and_lock(const Location& loc);
+static bool far_from_EKF_origin(const Location& loc);
+static bool set_home_to_current_location_and_lock();
+static void check_gps_base_pos();
+static void update_home_from_GPS();
+static void set_system_time_from_GPS();
+bool home_is_set();
+static uint32_t perf_info_get_min_time();
 
 #endif /* ARDUCOPTER_HPP_ */
