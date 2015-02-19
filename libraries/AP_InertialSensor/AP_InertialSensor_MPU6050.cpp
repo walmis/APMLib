@@ -334,7 +334,7 @@ void AP_InertialSensor_MPU6050::_onFifoData() {
 		}
 	} else {
 		//no packets available, give back i2c bus
-		dbgclr(1);
+		//dbgclr(1);
 		 _i2c_sem->give();
 	}
 
@@ -382,7 +382,7 @@ void AP_InertialSensor_MPU6050::_onSampleData() {
 		}
 	} else {
 		 //give back the i2c bus
-		dbgclr(1);
+		//dbgclr(1);
 		_i2c_sem->give();
 	}
 }
@@ -402,7 +402,7 @@ void AP_InertialSensor_MPU6050::_poll_data(void)
 		_sem_missed = true;
 		return;
 	}
-	dbgset(1);
+	//dbgset(1);
 
 	if(_fifo_reset_flag > 1) {
 		reset_fifo(INV_XYZ_ACCEL| INV_XYZ_GYRO);
@@ -535,7 +535,7 @@ void AP_InertialSensor_MPU6050::_register_write(uint8_t reg, uint8_t val)
 
 int16_t AP_InertialSensor_MPU6050::reset_fifo(uint8_t sensors)
 {
-	hal.uartE->println('*');
+	hal.uartE->println('^');
 	_i2c->writeRegister(_addr, MPUREG_USER_CTRL, 0);
     _i2c->writeRegister(_addr, MPUREG_USER_CTRL, BIT_FIFO_RST);
     _i2c->writeRegister(_addr, MPUREG_USER_CTRL, BIT_FIFO_EN);

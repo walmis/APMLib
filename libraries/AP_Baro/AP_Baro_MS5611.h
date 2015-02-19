@@ -29,7 +29,6 @@ public:
      * take_blocking from synchronous code (i.e. init) */
     virtual bool sem_take_nonblocking() = 0;
     virtual bool sem_take_blocking() = 0;
-    virtual bool sem_take_async(AP_HAL::MemberProc callback) = 0;
 
     /** Release the internal semaphore for this device. */
     virtual void sem_give() = 0;
@@ -48,7 +47,6 @@ public:
     bool sem_take_nonblocking();
     bool sem_take_blocking();
     void sem_give();
-    bool sem_take_async(AP_HAL::MemberProc callback);
 
 private:
     enum AP_HAL::SPIDeviceDriver::bus_speed _speed;
@@ -69,7 +67,6 @@ public:
     bool sem_take_nonblocking();
     bool sem_take_blocking();
     void sem_give();
-    bool sem_take_async(AP_HAL::MemberProc callback);
 
 private:
     uint8_t _addr;

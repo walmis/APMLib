@@ -225,15 +225,13 @@ void AP_Compass_FXOS8700::accumulate(void)
 	  return;
    }
 
-   if (!_i2c_sem->take_async(AP_HAL_MEMBERPROC(&AP_Compass_FXOS8700::accumulate))) {
-
+   if (!_i2c_sem->take(2)) {
        // the bus is busy - try again later
        return;
    }
-   dbgset();
    bool result = read_raw();
+
    _i2c_sem->give();
-   dbgclr();
 
    if (result) {
 	  _mag_x_accum += _mag_x;
