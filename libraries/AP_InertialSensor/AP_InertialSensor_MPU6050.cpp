@@ -392,6 +392,7 @@ void AP_InertialSensor_MPU6050::_onSampleData() {
  */
 void AP_InertialSensor_MPU6050::_poll_data(void)
 {
+	//dbgset(1);
 #ifdef MPU6000_DRDY_PIN
 	if(!hal.gpio->read(MPU6000_DRDY_PIN)) {
 		return;
@@ -402,7 +403,6 @@ void AP_InertialSensor_MPU6050::_poll_data(void)
 		_sem_missed = true;
 		return;
 	}
-	//dbgset(1);
 
 	if(_fifo_reset_flag > 1) {
 		reset_fifo(INV_XYZ_ACCEL| INV_XYZ_GYRO);
@@ -415,7 +415,6 @@ void AP_InertialSensor_MPU6050::_poll_data(void)
 	if(_fifo_count > 512) {
 		hal.i2c->readRegister(_addr, MPUREG_INT_STATUS, _data);
 		if (_data[0] & BIT_FIFO_OVERFLOW) {
-
 			reset_fifo(INV_XYZ_ACCEL| INV_XYZ_GYRO);
 			_i2c_sem->give();
 			return;
@@ -535,7 +534,6 @@ void AP_InertialSensor_MPU6050::_register_write(uint8_t reg, uint8_t val)
 
 int16_t AP_InertialSensor_MPU6050::reset_fifo(uint8_t sensors)
 {
-	hal.uartE->println('^');
 	_i2c->writeRegister(_addr, MPUREG_USER_CTRL, 0);
     _i2c->writeRegister(_addr, MPUREG_USER_CTRL, BIT_FIFO_RST);
     _i2c->writeRegister(_addr, MPUREG_USER_CTRL, BIT_FIFO_EN);

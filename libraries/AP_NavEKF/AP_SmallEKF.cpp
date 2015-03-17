@@ -2,7 +2,7 @@
 
 #include <AP_HAL.h>
 
-#if HAL_CPU_CLASS >= HAL_CPU_CLASS_150
+#if EKF_BUILD || HAL_CPU_CLASS >= HAL_CPU_CLASS_150
 
 // uncomment this to force the optimisation of this code, note that
 // this makes debugging harder

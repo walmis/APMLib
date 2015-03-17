@@ -2,7 +2,7 @@
 
 #include <AP_HAL.h>
 
-#if HAL_CPU_CLASS >= HAL_CPU_CLASS_150
+#if EKF_BUILD || HAL_CPU_CLASS >= HAL_CPU_CLASS_150
 
 // uncomment this to force the optimisation of this code, note that
 // this makes debugging harder
@@ -673,7 +673,6 @@ void NavEKF::UpdateFilter()
     if (!statesInitialised) {
         return;
     }
-
     // start the timer used for load measurement
     perf_begin(_perf_UpdateFilter);
 
@@ -732,7 +731,6 @@ void NavEKF::UpdateFilter()
     SelectFlowFusion();
     SelectTasFusion();
     SelectBetaFusion();
-
     // stop the timer used for load measurement
     perf_end(_perf_UpdateFilter);
 }
@@ -1191,6 +1189,7 @@ void NavEKF::UpdateStrapdownEquationsNED()
 void NavEKF::CovariancePrediction()
 {
     perf_begin(_perf_CovariancePrediction);
+    //dbgset(1);
     float windVelSigma; // wind velocity 1-sigma process noise - m/s
     float dAngBiasSigma;// delta angle bias 1-sigma process noise - rad/s
     float dVelBiasSigma;// delta velocity bias 1-sigma process noise - m/s
@@ -1838,7 +1837,7 @@ void NavEKF::CovariancePrediction()
 
     // constrain diagonals to prevent ill-conditioning
     ConstrainVariances();
-
+    //dbgclr(1);
     perf_end(_perf_CovariancePrediction);
 }
 

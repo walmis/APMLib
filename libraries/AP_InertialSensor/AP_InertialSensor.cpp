@@ -1078,7 +1078,6 @@ void AP_InertialSensor::wait_for_sample(void)
         // consuming the sample with update()
         return;
     }
-
     uint32_t now = hal.scheduler->micros();
 
     if (_next_sample_usec == 0 && _delta_time <= 0) {
@@ -1135,7 +1134,6 @@ check_sample:
     now = hal.scheduler->micros();
     _delta_time = (now - _last_sample_usec) * 1.0e-6f;
     _last_sample_usec = now;
-
 #if 0
     {
         static uint64_t delta_time_sum;
