@@ -193,8 +193,10 @@ then
         echo "Setting FMU mode_serial"
         fmu mode_serial
 else
-        echo "Setting FMU mode_pwm"
-        fmu mode_pwm
+        if fmu mode_pwm4
+        then
+                echo "Set FMU mode_pwm4"
+        fi
 fi
 
 
@@ -361,6 +363,12 @@ then
     echo "Found px4flow sensor"
 fi
 
+# optional PWM input driver
+if pwm_input start
+then
+    echo "started pwm_input driver"
+fi
+
 echo "Trying PX4IO board"
 
 if mtd start /fs/mtd
@@ -395,6 +403,12 @@ fi
 if batt_smbus -b 2 start
 then
     echo "Found batt_smbus"
+fi
+
+# optional oreo leds
+if oreoled start
+then
+    echo "oreoled started OK"
 fi
 
 if [ $BOARD == FMUv2 ]

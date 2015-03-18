@@ -823,7 +823,7 @@ bool GCS_MAVLINK::stream_trigger(enum streams stream_num)
         if (rate > 50) {
             rate = 50;
         }
-        stream_ticks[stream_num] = (50 / rate) + stream_slowdown;
+        stream_ticks[stream_num] = (50 / rate) - 1 + stream_slowdown;
         return true;
     }
 
@@ -1084,7 +1084,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
                 if (arming.arm(AP_Arming::MAVLINK)) {
                     //only log if arming was successful
                     channel_throttle->enable_out();
-                    Log_Arm_Disarm();
+                    change_arm_state();
                     result = MAV_RESULT_ACCEPTED;
                 } else {
                     result = MAV_RESULT_FAILED;
@@ -1103,7 +1103,7 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
                     throttle_suppressed = auto_throttle_mode;
 
                     //only log if disarming was successful
-                    Log_Arm_Disarm();
+                    change_arm_state();
                     result = MAV_RESULT_ACCEPTED;
                 } else {
                     result = MAV_RESULT_FAILED;
@@ -1222,6 +1222,29 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
         case MAV_CMD_REQUEST_AUTOPILOT_CAPABILITIES: {
             if (packet.param1 == 1) {
                 gcs[chan-MAVLINK_COMM_0].send_autopilot_version();
+                result = MAV_RESULT_ACCEPTED;
+            }
+            break;
+
+        case MAV_CMD_DO_SET_HOME:
+            // param1 : use current (1=use current location, 0=use specified location)
+            // param5 : latitude
+            // param6 : longitude
+            // param7 : altitude (absolute)
+            result = MAV_RESULT_FAILED; // assume failure
+            if (packet.param1 == 1) {
+                init_home();
+            } else {
+                if (packet.param5 == 0 && packet.param6 == 0 && packet.param7 == 0) {
+                    // don't allow the 0,0 position
+                    break;
+                }
+                Location new_home_loc;
+                new_home_loc.lat = (int32_t)(packet.param5 * 1.0e7f);
+                new_home_loc.lng = (int32_t)(packet.param6 * 1.0e7f);
+                new_home_loc.alt = (int32_t)(packet.param7 * 100.0f);
+                ahrs.set_home(new_home_loc);
+                home_is_set = HOME_SET_NOT_LOCKED;
                 result = MAV_RESULT_ACCEPTED;
             }
             break;

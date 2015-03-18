@@ -121,7 +121,7 @@
 								<option id="gnu.cpp.compiler.option.preprocessor.def.1033948092" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="CONFIG_HAL_BOARD=HAL_BOARD_XPCC"/>
 									<listOptionValue builtIn="false" value="APM_BUILD_DIRECTORY=APM_BUILD_ArduCopter"/>
-									<listOptionValue builtIn="false" value="EKF_BUILD=0"/>
+									<listOptionValue builtIn="false" value="EKF_BUILD=1"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.optimization.flags.838778520" name="Other optimization flags" superClass="gnu.cpp.compiler.option.optimization.flags" useByScannerDiscovery="false" value="-fsingle-precision-constant -fno-math-errno -mslow-flash-data" valueType="string"/>
 								<option id="gnu.cpp.compiler.option.dialect.std.1944394660" name="Language standard" superClass="gnu.cpp.compiler.option.dialect.std" useByScannerDiscovery="true" value="gnu.cpp.compiler.dialect.default" valueType="enumerated"/>

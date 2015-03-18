@@ -750,7 +750,7 @@ bool GCS_MAVLINK::stream_trigger(enum streams stream_num)
         if (rate > 50) {
             rate = 50;
         }
-        stream_ticks[stream_num] = (50 / rate) + stream_slowdown;
+        stream_ticks[stream_num] = (50 / rate) - 1 + stream_slowdown;
         return true;
     }
 
@@ -1576,6 +1576,10 @@ void GCS_MAVLINK::handleMessage(mavlink_message_t* msg)
         gcs[chan-MAVLINK_COMM_0].send_autopilot_version();
         break;
 
+    case MAVLINK_MSG_ID_LED_CONTROL:
+        // send message to Notify
+        AP_Notify::handle_led_control(msg);
+        break;
 
     }     // end switch
 } // end handle mavlink

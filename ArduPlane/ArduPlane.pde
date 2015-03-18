@@ -1,6 +1,6 @@
 /// -*- tab-width: 4; Mode: C++; c-basic-offset: 4; indent-tabs-mode: nil -*-
 
-#define THISFIRMWARE "ArduPlane V3.3.0alpha1"
+#define THISFIRMWARE "ArduPlane V3.3.0beta1"
 /*
    Lead developer: Andrew Tridgell
  
@@ -530,8 +530,9 @@ static struct {
     // denotes if a go-around has been commanded for landing
     bool commanded_go_around:1;
 
-    // Altitude threshold to complete a takeoff command in autonomous modes.  Centimeters
-    int32_t takeoff_altitude_cm;
+    // Altitude threshold to complete a takeoff command in autonomous
+    // modes.  Centimeters above home
+    int32_t takeoff_altitude_rel_cm;
 
     // Minimum pitch to hold during takeoff command execution.  Hundredths of a degree
     int16_t takeoff_pitch_cd;
@@ -566,7 +567,7 @@ static struct {
     fbwa_tdrag_takeoff_mode : false,
     checked_for_autoland : false,
     commanded_go_around : false,
-    takeoff_altitude_cm : 0,
+    takeoff_altitude_rel_cm : 0,
     takeoff_pitch_cd : 0,
     highest_airspeed : 0,
     initial_pitch_cd : 0,
@@ -672,7 +673,7 @@ static int16_t condition_rate;
 static const struct Location &home = ahrs.get_home();
 
 // Flag for if we have g_gps lock and have set the home location in AHRS
-static bool home_is_set;
+static enum HomeState home_is_set;
 // The location of the previous waypoint.  Used for track following and altitude ramp calculations
 static Location prev_WP_loc;
 // The plane's current location
@@ -1060,6 +1061,13 @@ static void terrain_update(void)
 {
 #if AP_TERRAIN_AVAILABLE
     terrain.update();
+
+    // tell the rangefinder our height, so it can go into power saving
+    // mode if available
+    float height;
+    if (terrain.height_above_terrain(height, true)) {
+        rangefinder.set_estimated_terrain_height(height);
+    }
 #endif
 }
 

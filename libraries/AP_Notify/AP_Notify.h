@@ -19,6 +19,7 @@
 #define __AP_NOTIFY_H__
 
 #include <AP_Common.h>
+#include <GCS_MAVLink.h>
 #include <AP_BoardLED.h>
 #include <ToshibaLED.h>
 #include <ToshibaLED_I2C.h>
@@ -29,9 +30,14 @@
 #include <ExternalLED.h>
 #include <Buzzer.h>
 #include <VRBoard_LED.h>
+#include <OreoLED_PX4.h>
+
+#ifndef OREOLED_ENABLED
+ # define OREOLED_ENABLED   0   // set to 1 to enable OreoLEDs
+#endif
 
 #if CONFIG_HAL_BOARD == HAL_BOARD_PX4
-    #define CONFIG_NOTIFY_DEVICES_COUNT 3
+    #define CONFIG_NOTIFY_DEVICES_COUNT (3+OREOLED_ENABLED)
 #elif CONFIG_HAL_BOARD == HAL_BOARD_APM1 || CONFIG_HAL_BOARD == HAL_BOARD_APM2 
     #define CONFIG_NOTIFY_DEVICES_COUNT 3
 #elif CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
@@ -94,6 +100,9 @@ public:
 
     /// update - allow updates of leds that cannot be updated during a timed interrupt
     void update(void);
+
+    // handle a LED_CONTROL message
+    static void handle_led_control(mavlink_message_t* msg);
 
 private:
     static NotifyDevice* _devices[CONFIG_NOTIFY_DEVICES_COUNT];
